@@ -1,3 +1,19 @@
-socket = /tmp/btd.socket
-# Location of the database
+# BTD Example config file
+#
+# Config file is looked for at the following locations in order of priority:
+# - The location specified with the -c flag
+# - $XDG_CONFIG_HOME/btd/config
+# - ~/.config/btd/config
+# - /etc/btd.conf
+# - $XDG_CONFIG_DIRS/btd/config
+# - /etc/xdg/btd/config
+#
+# Comments start with a # and can be inline
+# All options are initialized with their defaults
+
+# Location of the socket used for communicating with the daemon
+socket = /var/run/btd.socket
+
+# Location of the database storing all the files
 db = ~/.btddb # some comment
+

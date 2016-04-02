@@ -64,15 +64,11 @@ int main (int argc, char **argv)
 	btd_config_print(&config, stdout);
 
 	/* Setup socket */
-	if(path_exists(config.socket)){
-		die("Socket already in use");
-	}
 	socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if(socket_fd < 0) {
-		die("socket() failed");
+		perror("socket");
+		die("Bye");
 	} 
-	unlink(config.socket);
-
 	memset(&address, 0, sizeof(struct sockaddr_un));
 
 	address.sun_family = AF_UNIX;
@@ -80,11 +76,13 @@ int main (int argc, char **argv)
 
 	if(bind(socket_fd, (struct sockaddr *) &address, 
 			sizeof(struct sockaddr_un)) != 0) {
-		die("bind() failed");
+		perror("bind");
+		die("Bye");
 	}
 
 	if(listen(socket_fd, 5) != 0) {
-		die("listen() failed");
+		perror("listen");
+		die("Bye");
 	}
 
 	while((connection_fd = accept(socket_fd, (struct sockaddr *) &address,
