@@ -1,0 +1,3 @@
+socket = /tmp/btd.socket
+# Location of the database
+db = ~/.btddb # some comment

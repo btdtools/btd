@@ -1,5 +1,5 @@
 PROGRAM:=btd
-OBSJ:=btd.o
+OBJS:=config.o misc.o
 
 HELP2MAN:=help2man
 HELP2MANFLAGS:=--section=1 --no-discard-stderr --no-info
@@ -7,7 +7,7 @@ HELP2MANFLAGS:=--section=1 --no-discard-stderr --no-info
 GZIP:=gzip
 GZIPFLAGS:=-9 --verbose
 
-CFLAGS:=-O3 -Wextra -Wall -Werror -std=gnu11
+CFLAGS:=-g -O3 -Wextra -Wall -Werror -std=gnu11
 LDLIBS:=-lbtparse
 
 all: $(PROGRAM)
