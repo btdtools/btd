@@ -12,7 +12,7 @@ GZIPFLAGS:=-9 --verbose
 $(BINDIR)/$(PROGRAM): $(SRCDIR)/$(PROGRAM) $(BINDIR)
 	cp $< $@
 
-man: $(PROGRAM).1.gz
+man: $(PROGRAM).1.gz 
 
 $(PROGRAM).1.gz: $(BINDIR)/$(PROGRAM)
 	$(HELP2MAN) $(HELP2MANFLAGS) $< | $(GZIP) $(GZIPFLAGS) > $@

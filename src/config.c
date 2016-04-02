@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include "config.h"
+#include "log.h"
 #include "misc.h"
 
 const char *argp_program_version = "btd 0.1";
@@ -31,10 +32,10 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 	switch (key)
 	{
 		case 'q':
-			config->verbose -= config->verbose != 0;
+			btd_decr_log();
 			break;
 		case 'v':
-			config->verbose += config->verbose != 5;
+			btd_incr_log();
 			break;
 		case ARGP_KEY_ARG:
 			config->configpath = arg;
@@ -141,7 +142,6 @@ static char *get_config_path(char *cp) {
 
 void update_config(struct btd_config *config, char *key, char *value){
 	key = rtrim(ltrim(key));
-	value = rtrim(ltrim(value));
 
 	/* If the key is empty or the line starts with a comment we skip */
 	if(key[0] == '#' || strlen(key) == 0){
@@ -153,6 +153,7 @@ void update_config(struct btd_config *config, char *key, char *value){
 		return;
 	}
 	value[strcspn(value, "#")] = '\0';
+	value = rtrim(ltrim(value));
 
 	/* If the value stripped of comments is empty we skip */
 	if(strlen(value) == 0){
@@ -174,12 +175,18 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	size_t len, sep;
 
 	config->configpath = NULL;
-	config->verbose = 1;
 
-	config->socket = "/var/run/btd.socket";
+	config->socket = "~/.btd/btd.socket";
+	config->db = "~/.btd/btd.db";
+
 	argp_parse(&argp, argc, argv, 0, 0, config);
+	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
 	config->configpath = get_config_path(config->configpath);
+	config->socket = resolve_tilde(config->socket);
+	config->db = resolve_tilde(config->db);
 
+
+	btd_log(2, "Opening config at '%s'\n", config->configpath);
 	fp = fopen(config->configpath, "r");
 
 	while(getline(&line, &len, fp) != -1) {
@@ -193,6 +200,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 		free(line);
 		line = NULL;
 	}
+	btd_log(2, "Done parsing\n");
 
 	fclose(fp);
 }
@@ -202,12 +210,10 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"BTD Config digest\n"
 		"-----------------\n"
 		"configpath: '%s'\n"
-		"verbosity: '%d'\n"
 		"\n"
 		"socket: '%s'\n"
 		"db: '%s'\n", 
 			config->configpath,
-			config->verbose,
 			config->socket,
 			config->db);
 }

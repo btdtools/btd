@@ -6,23 +6,30 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <sqlite3.h>
 
 #include "config.h"
 #include "misc.h"
+#include "log.h"
+#include "db.h"
 
 struct btd_config config;
 int socket_fd;
 
 void cleanup()
 {
+	btd_log(2, "Closing socket\n");
 	close(socket_fd);
+	btd_log(2, "Unlinking socket\n");
 	unlink(config.socket);
+	btd_log(2, "Closing database\n");
+	db_close();
 }
 
 void sig_handler(int signo)
 {
 	if (signo == SIGINT || signo == SIGTERM){
-		printf("Signal %s caught\n", strsignal(signo));
+		btd_log(0, "Signal %s caught\n", strsignal(signo));
 		cleanup();
 		depart("Quitting...");
 	}
@@ -48,8 +55,11 @@ int main (int argc, char **argv)
 {
 	struct sockaddr_un address;
 	int connection_fd;
+	int dbrt;
 	socklen_t address_length;
 	pid_t child;
+
+	btd_init_log();
 
 	/* Register signal handlers */
 	if(signal(SIGINT, sig_handler) == SIG_ERR){
@@ -63,12 +73,20 @@ int main (int argc, char **argv)
 	btd_config_populate(&config, argc, argv);
 	btd_config_print(&config, stdout);
 
+	/* Init db */
+	dbrt = db_init(config.db);
+	if(dbrt){
+		die(sqlite3_errstr(dbrt));
+	}
+
 	/* Setup socket */
+	btd_log(2, "Registering socket\n");
 	socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if(socket_fd < 0) {
 		perror("socket");
 		die("Bye");
 	} 
+	btd_log(2, "Registered socket\n");
 	memset(&address, 0, sizeof(struct sockaddr_un));
 
 	address.sun_family = AF_UNIX;
@@ -79,14 +97,19 @@ int main (int argc, char **argv)
 		perror("bind");
 		die("Bye");
 	}
+	btd_log(2, "Bound socket\n");
 
 	if(listen(socket_fd, 5) != 0) {
 		perror("listen");
 		die("Bye");
 	}
+	btd_log(2, "Listening to socket\n");
 
+	btd_log(1, "Waiting for a client to connect\n");
+	fflush(stdout);
 	while((connection_fd = accept(socket_fd, (struct sockaddr *) &address,
 			&address_length)) > -1) {
+		btd_log(1, "Client connected...\n");
 		child = fork();
 		if(child == 0) {
 			return connection_handler(connection_fd);

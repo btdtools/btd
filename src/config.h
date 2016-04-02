@@ -5,7 +5,6 @@ struct btd_config
 {
 	/* Deamon options */
 	char *configpath;
-	int verbose;
 	/* Configuration options */
 	char *socket;
 	char *db;

@@ -2,7 +2,7 @@ PROGRAM:=btd
 OBJS:=config.o misc.o db.o
 
 CFLAGS:=-g -O3 -Wextra -Wall -Werror -std=gnu11
-LDLIBS:=-lbtparse
+LDLIBS:=-lbtparse -lsqlite3
 
 all: $(PROGRAM)
 

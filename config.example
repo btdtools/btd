@@ -12,8 +12,8 @@
 # All options are initialized with their defaults
 
 # Location of the socket used for communicating with the daemon
-socket = /var/run/btd.socket
+socket = ./btd.socket
 
 # Location of the database storing all the files
-db = ~/.btddb # some comment
+db = ./btddb # some comment
 
