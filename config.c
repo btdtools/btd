@@ -56,11 +56,6 @@ static struct argp argp = {
 	.help_filter=NULL,
 	.argp_domain=NULL};
 
-static bool path_exists(const char *path) {
-	struct stat buf;
-	return (stat(path, &buf) == 0);
-}
-
 static char *resolve_tilde(const char *path) {
 	static glob_t globbuf;
 	char *head, *tail, *result = NULL;
