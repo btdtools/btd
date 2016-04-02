@@ -1,5 +1,7 @@
 PROGRAM:=btd
-OBJS:=config.o misc.o
+
+BINDIR:=bin
+SRCDIR:=src
 
 HELP2MAN:=help2man
 HELP2MANFLAGS:=--section=1 --no-discard-stderr --no-info
@@ -7,18 +9,20 @@ HELP2MANFLAGS:=--section=1 --no-discard-stderr --no-info
 GZIP:=gzip
 GZIPFLAGS:=-9 --verbose
 
-CFLAGS:=-g -O3 -Wextra -Wall -Werror -std=gnu11
-LDLIBS:=-lbtparse
-
-all: $(PROGRAM)
+$(BINDIR)/$(PROGRAM): $(SRCDIR)/$(PROGRAM) $(BINDIR)
+	cp $< $@
 
 man: $(PROGRAM).1.gz
 
-$(PROGRAM): $(PROGRAM).o $(OBJS)
-	$(CC) $< $(OBJS) $(LDLIBS) -o $@
+$(PROGRAM).1.gz: $(BINDIR)/$(PROGRAM)
+	$(HELP2MAN) $(HELP2MANFLAGS) $< | $(GZIP) $(GZIPFLAGS) > $@
 
-%.1.gz: %
-	$(HELP2MAN) $(HELP2MANFLAGS) ./$< | $(GZIP) $(GZIPFLAGS) > $@
+$(SRCDIR)/%:
+	make -C $(SRCDIR)
+
+$(BINDIR):
+	mkdir $@
 
 clean:
-	$(RM) -v $(PROGRAM) $(PROGRAM).o $(OBJS) $(PROGRAM).1.gz
+	$(RM) -rv $(BINDIR) 
+	make -C $(SRCDIR) clean
