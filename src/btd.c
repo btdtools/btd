@@ -54,7 +54,6 @@ int main (int argc, char **argv)
 {
 	struct sockaddr_un address;
 	int connection_fd;
-	int dbrt;
 	socklen_t address_length;
 	pid_t child;
 
@@ -73,10 +72,7 @@ int main (int argc, char **argv)
 	btd_config_print(&config, stdout);
 
 	/* Init db */
-	dbrt = db_init(config.db);
-	if(dbrt){
-		die("Sqlite3 error: %s\n", sqlite3_errstr(dbrt));
-	}
+	db_init(config.db);
 
 	/* Setup socket */
 	btd_log(2, "Registering socket\n");
