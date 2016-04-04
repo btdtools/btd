@@ -17,3 +17,5 @@ socket = ./btd.socket
 # Location of the database storing all the files
 db = ./btddb # some comment
 
+# Attached file storage
+files = ./files/files

@@ -165,6 +165,8 @@ void update_config(struct btd_config *config, char *key, char *value){
 		config->socket = resolve_tilde(value);
 	} else if(strcmp(key, "db") == 0){
 		config->db = resolve_tilde(value);
+	} else if(strcmp(key, "files") == 0){
+		config->files = resolve_tilde(value);
 	}
 }
 
@@ -178,6 +180,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 
 	config->socket = "~/.btd/btd.socket";
 	config->db = "~/.btd/btd.db";
+	config->files = "~/.btd/files";
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
 	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
@@ -212,8 +215,11 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"configpath: '%s'\n"
 		"\n"
 		"socket: '%s'\n"
-		"db: '%s'\n", 
+		"db: '%s'\n"
+		"files: '%s'\n",
 			config->configpath,
 			config->socket,
-			config->db);
+			config->db,
+			config->files
+			);
 }

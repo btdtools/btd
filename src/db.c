@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sqlite3.h>
+#include <sys/stat.h>
 
 #include "log.h"
 #include "misc.h"
@@ -37,30 +38,39 @@ char **db_get_version()
 	return data;
 }
 
-void db_init(char *path)
+void db_init(char *dbpath, char *fspath)
 {
-	char **dateversion;
+	char **datever;
 
-	int rc = sqlite3_open(path, &db);
-	btd_log(2, "Opening db at: '%s'\n", path);
+	int rc = sqlite3_open(dbpath, &db);
+	btd_log(2, "Opening db at: '%s'\n", dbpath);
 	if(rc != SQLITE_OK){
 		die("SQLite error: %s\n", sqlite3_errmsg(db));
 	}
 
-	btd_log(2, "Checking for version table\n");
+	btd_log(2, "Grabbing and/or creating version table\n");
 	rc = sqlite3_exec(db, sqlite_create_cfg_table, NULL, 0, &sqlite_currerr);
 	if(rc != SQLITE_OK ){
 		die("SQLite error: %s\n", sqlite_currerr);
 	}
 
+	datever = db_get_version();
+	btd_log(1, "Opened db v%s created on %s\n", datever[0], datever[1]);
 
-	btd_log(2, "Grabbing version\n");
-	dateversion = db_get_version();
-	btd_log(1, "Opened db v%s created on %s\n", dateversion[0], dateversion[1]);
+	free(datever[0]);
+	free(datever[1]);
+	free(datever);
 
-	free(dateversion[0]);
-	free(dateversion[1]);
-	free(dateversion);
+	if(!path_exists(fspath)){
+		btd_log(2, "Creating filesystem at: '%s'\n", fspath);
+		rc = mkdir(fspath, 0777);
+		if(rc == -1){
+			perror("mkdir");
+			die("If the directory didn't exist you can create it by running:\n"
+				"$ mkdir -p '%s'\n", fspath);
+		}
+	}
+	btd_log(2, "Filesystem initialized\n");
 }
 
 void db_close()

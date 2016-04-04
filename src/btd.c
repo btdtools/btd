@@ -30,6 +30,7 @@ void sig_handler(int signo)
 {
 	if (signo == SIGINT || signo == SIGTERM){
 		cleanup();
+		fflush(stdout);
 		depart("Signal %s caught\nQuitting...\n", strsignal(signo));
 	}
 }
@@ -72,7 +73,7 @@ int main (int argc, char **argv)
 	btd_config_print(&config, stdout);
 
 	/* Init db */
-	db_init(config.db);
+	db_init(config.db, config.files);
 
 	/* Setup socket */
 	btd_log(2, "Registering socket\n");

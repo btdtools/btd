@@ -8,6 +8,7 @@ struct btd_config
 	/* Configuration options */
 	char *socket;
 	char *db;
+	char *files;
 };
 
 /* Populate a structure, read from args and config file */
