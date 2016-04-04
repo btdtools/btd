@@ -69,7 +69,7 @@ static char *resolve_tilde(const char *path) {
 	if (res == GLOB_NOMATCH || globbuf.gl_pathc != 1)
 		result = safe_strdup(path);
 	else if (res != 0) {
-		die("glob() failed");
+		die("glob() failed\n");
 	} else {
 		head = globbuf.gl_pathv[0];
 		result = calloc(strlen(head) + (tail ? strlen(tail) : 0) + 1, 1);
@@ -88,7 +88,7 @@ static char *get_config_path(char *cp) {
 		if(path_exists(cp)){
 			return cp;
 		}
-		die("Configuration file doesn't exist");
+		die("Configuration file at %s doesn't exist\n", cp);
 	}
 	char *xdg_config_home, *xdg_config_dirs, *config_path, *buf, *tok;
 
@@ -99,7 +99,7 @@ static char *get_config_path(char *cp) {
 
 	xdg_config_home = resolve_tilde(xdg_config_home);
 	if (asprintf(&config_path, "%s/btd/config", xdg_config_home) == -1){
-		die("asprintf() failed");
+		die("asprintf() failed\n");
 	}
 	free(xdg_config_home);
 
@@ -124,7 +124,7 @@ static char *get_config_path(char *cp) {
 	while (tok != NULL) {
 		tok = resolve_tilde(tok);
 		if (asprintf(&config_path, "%s/btd/config", tok) == -1){
-			die("asprintf() failed");
+			die("asprintf() failed\n");
 		}
 		free(tok);
 		if (path_exists(config_path)) {
@@ -136,7 +136,7 @@ static char *get_config_path(char *cp) {
 	}
 	free(buf);
 
-	die("Unable to find the configuration file");
+	die("Unable to find the configuration file\n");
 	return NULL;
 }
 
@@ -193,7 +193,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 		sep = strcspn(line, "=");
 		key = strndup(line, sep);
 		if(key == NULL){
-			die("strndup() failed");
+			die("strndup() failed\n");
 		}
 		update_config(config, key, line+sep+1);
 		free(key);

@@ -29,9 +29,8 @@ void cleanup()
 void sig_handler(int signo)
 {
 	if (signo == SIGINT || signo == SIGTERM){
-		btd_log(0, "Signal %s caught\n", strsignal(signo));
 		cleanup();
-		depart("Quitting...");
+		depart("Signal %s caught\nQuitting...\n", strsignal(signo));
 	}
 }
 
@@ -63,10 +62,10 @@ int main (int argc, char **argv)
 
 	/* Register signal handlers */
 	if(signal(SIGINT, sig_handler) == SIG_ERR){
-		die("Can't catch SIGINT");
+		die("Can't catch SIGINT\n");
 	}
 	if(signal(SIGTERM, sig_handler) == SIG_ERR){
-		die("Can't catch SIGTERM");
+		die("Can't catch SIGTERM\n");
 	}
 
 	/* Parse args and config */
@@ -76,7 +75,7 @@ int main (int argc, char **argv)
 	/* Init db */
 	dbrt = db_init(config.db);
 	if(dbrt){
-		die(sqlite3_errstr(dbrt));
+		die("Sqlite3 error: %s\n", sqlite3_errstr(dbrt));
 	}
 
 	/* Setup socket */
@@ -84,7 +83,7 @@ int main (int argc, char **argv)
 	socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
 	if(socket_fd < 0) {
 		perror("socket");
-		die("Bye");
+		die("Bye\n");
 	} 
 	btd_log(2, "Registered socket\n");
 	memset(&address, 0, sizeof(struct sockaddr_un));
@@ -95,13 +94,13 @@ int main (int argc, char **argv)
 	if(bind(socket_fd, (struct sockaddr *) &address, 
 			sizeof(struct sockaddr_un)) != 0) {
 		perror("bind");
-		die("Bye");
+		die("Bye\n");
 	}
 	btd_log(2, "Bound socket\n");
 
 	if(listen(socket_fd, 5) != 0) {
 		perror("listen");
-		die("Bye");
+		die("Bye\n");
 	}
 	btd_log(2, "Listening to socket\n");
 
@@ -116,6 +115,6 @@ int main (int argc, char **argv)
 		}
 		close(connection_fd);
 	}
+	depart("Bye...\n");
 	cleanup();
-	depart("Bye...");
 }
