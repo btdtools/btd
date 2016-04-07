@@ -4,7 +4,6 @@
 #include <string.h>
 #include <sys/stat.h>
 
-#include "bibtex.h"
 #include "config.h"
 #include "log.h"
 #include "misc.h"
@@ -59,6 +58,21 @@ void db_init(struct btd_config *cfg)
 	char **datever;
 
 	config = cfg;
+	fprintf(stdout, 
+		"BTD Config digest\n"
+		"-----------------\n"
+		"configpath: '%s'\n"
+		"\n"
+		"socket: '%s'\n"
+		"db: '%s'\n"
+		"files: '%s'\n"
+		"filefmt: '%s'\n",
+			config->configpath,
+			config->socket,
+			config->db,
+			config->files,
+			config->filefmt
+			);
 
 	int rc = sqlite3_open(config->db, &db);
 	btd_log(2, "Opening db at: '%s'\n", config->db);
@@ -82,7 +96,7 @@ void db_init(struct btd_config *cfg)
 
 	if(!path_exists(config->files)){
 		btd_log(2, "Creating filesystem at: '%s'\n", config->files);
-		rc = mkdir(config->files, 0777);
+		//rc = mkdir(config->files, 0777);
 		if(rc == -1){
 			perror("mkdir");
 			die("If the directory didn't exist you can create it by running:\n"

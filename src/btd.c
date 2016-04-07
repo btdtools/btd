@@ -1,4 +1,3 @@
-#include <btparse.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +12,7 @@
 #include "log.h"
 #include "db.h"
 
-struct btd_config config;
+struct btd_config *config;
 int socket_fd;
 
 void cleanup()
@@ -21,7 +20,7 @@ void cleanup()
 	btd_log(2, "Closing socket\n");
 	close(socket_fd);
 	btd_log(2, "Unlinking socket\n");
-	unlink(config.socket);
+	unlink(config->socket);
 	btd_log(2, "Closing database\n");
 	db_close();
 }
@@ -69,11 +68,13 @@ int main (int argc, char **argv)
 	}
 
 	/* Parse args and config */
-	btd_config_populate(&config, argc, argv);
-	btd_config_print(&config, stdout);
+	config = malloc(sizeof (struct btd_config));
+	btd_config_populate(config, argc, argv);
+	printf("Config parsing done\n");
+	btd_config_print(config, stdout);
 
 	/* Init db */
-	db_init();
+	db_init(config);
 
 	/* Setup socket */
 	btd_log(2, "Registering socket\n");
@@ -86,7 +87,7 @@ int main (int argc, char **argv)
 	memset(&address, 0, sizeof(struct sockaddr_un));
 
 	address.sun_family = AF_UNIX;
-	strcpy(address.sun_path, config.socket);
+	strcpy(address.sun_path, config->socket);
 
 	if(bind(socket_fd, (struct sockaddr *) &address, 
 			sizeof(struct sockaddr_un)) != 0) {

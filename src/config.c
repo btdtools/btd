@@ -180,15 +180,18 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 
 	config->configpath = NULL;
 
-	config->socket = "~/.btd/btd.socket";
-	config->db = "~/.btd/btd.db";
-	config->files = "~/.btd/files";
+	config->socket = safe_strdup("~/.btd/btd.socket");
+	config->db = safe_strdup("~/.btd/btd.db");
+	config->files = safe_strdup("~/.btd/files");
+	config->filefmt = safe_strdup(".pdf");
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
 	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
+
 	config->configpath = get_config_path(config->configpath);
 	config->socket = resolve_tilde(config->socket);
 	config->db = resolve_tilde(config->db);
+	config->files = resolve_tilde(config->files);
 
 
 	btd_log(2, "Opening config at '%s'\n", config->configpath);

@@ -1,10 +1,10 @@
 PROGRAM:=btd
-OBJS:=config.o misc.o db.o bibtex.o
+OBJS:=config.o misc.o db.o
 
 CFLAGS:=-g -O3 -Wextra -Wall -Werror -std=gnu11
 LDLIBS:=-lsqlite3
 
-all: $(PROGRAM) bt_lex.c
+all: $(PROGRAM)
 
 $(PROGRAM): $(PROGRAM).o $(OBJS)
 	$(CC) $< $(OBJS) $(LDLIBS) -o $@
