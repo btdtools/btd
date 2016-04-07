@@ -36,17 +36,17 @@ void sig_handler(int signo)
 
 int connection_handler(int connection_fd)
 {
-	int nbytes;
-	char buffer[256];
+	FILE *connection_stream = fdopen(connection_fd, "r");
 
-	nbytes = read(connection_fd, buffer, 256);
-	buffer[nbytes] = '\0';
+//	nbytes = read(connection_fd, buffer, 256);
+//	buffer[nbytes] = '\0';
 
-	printf("MESSAGE FROM CLIENT: %s\n", buffer);
-	nbytes = snprintf(buffer, 256, "hello from the server");
-	write(connection_fd, buffer, nbytes);
+//	printf("MESSAGE FROM CLIENT: %s\n", buffer);
+//	nbytes = snprintf(buffer, 256, "hello from the server");
+//	write(connection_fd, buffer, nbytes);
 
-	close(connection_fd);
+	btd_log(1, "Closing client...\n");
+	fclose(connection_stream);
 	return 0;
 }
 
