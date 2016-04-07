@@ -73,7 +73,7 @@ int main (int argc, char **argv)
 	btd_config_print(&config, stdout);
 
 	/* Init db */
-	db_init(config.db, config.files);
+	db_init();
 
 	/* Setup socket */
 	btd_log(2, "Registering socket\n");

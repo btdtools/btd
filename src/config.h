@@ -9,6 +9,7 @@ struct btd_config
 	char *socket;
 	char *db;
 	char *files;
+	char *filefmt;
 };
 
 /* Populate a structure, read from args and config file */

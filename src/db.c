@@ -1,8 +1,11 @@
+#include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sqlite3.h>
+#include <string.h>
 #include <sys/stat.h>
 
+#include "bibtex.h"
+#include "config.h"
 #include "log.h"
 #include "misc.h"
 
@@ -14,6 +17,7 @@ char *sqlite_create_cfg_table =
 	"INSERT OR IGNORE INTO config (rowid, version, datecreated)" 
 	"VALUES(1," VERSION ", date('now'));";
 
+struct btd_config *config;
 sqlite3 *db;
 char *sqlite_currerr;
 
@@ -27,7 +31,7 @@ static int db_get_version_cb(void *nu, int argc, char **argv, char **cname)
 	(void)cname;
 }
 
-char **db_get_version()
+static char **db_get_version()
 {
 	char **data = malloc((sizeof (char*))*2);
 	int rc = sqlite3_exec(db, "SELECT version, datecreated FROM config",
@@ -38,12 +42,26 @@ char **db_get_version()
 	return data;
 }
 
-void db_init(char *dbpath, char *fspath)
+void db_convert(char *version)
+{
+	btd_log(2, "Db version: %s, current version: " VERSION "\n", version);
+	if(strcmp(version, VERSION) == 0){
+		btd_log(2, "Db up to date\n");
+	} else {
+		die("Database version: %s\n"
+			"Program version: " VERSION "\n"
+			"There is no upgrade possible\n", version);
+	}
+}
+
+void db_init(struct btd_config *cfg)
 {
 	char **datever;
 
-	int rc = sqlite3_open(dbpath, &db);
-	btd_log(2, "Opening db at: '%s'\n", dbpath);
+	config = cfg;
+
+	int rc = sqlite3_open(config->db, &db);
+	btd_log(2, "Opening db at: '%s'\n", config->db);
 	if(rc != SQLITE_OK){
 		die("SQLite error: %s\n", sqlite3_errmsg(db));
 	}
@@ -56,18 +74,19 @@ void db_init(char *dbpath, char *fspath)
 
 	datever = db_get_version();
 	btd_log(1, "Opened db v%s created on %s\n", datever[0], datever[1]);
+	db_convert(datever[0]);
 
 	free(datever[0]);
 	free(datever[1]);
 	free(datever);
 
-	if(!path_exists(fspath)){
-		btd_log(2, "Creating filesystem at: '%s'\n", fspath);
-		rc = mkdir(fspath, 0777);
+	if(!path_exists(config->files)){
+		btd_log(2, "Creating filesystem at: '%s'\n", config->files);
+		rc = mkdir(config->files, 0777);
 		if(rc == -1){
 			perror("mkdir");
 			die("If the directory didn't exist you can create it by running:\n"
-				"$ mkdir -p '%s'\n", fspath);
+				"$ mkdir -p '%s'\n", config->files);
 		}
 	}
 	btd_log(2, "Filesystem initialized\n");

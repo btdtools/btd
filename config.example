@@ -19,3 +19,14 @@ db = ./btddb # some comment
 
 # Attached file storage
 files = ./files/files
+
+# Format in which to store files.
+#
+# Available shortcuts:
+# %entry  - http://newton.ex.ac.uk/tex/pack/bibtex/btxdoc/node7.html
+# %type   - http://newton.ex.ac.uk/tex/pack/bibtex/btxdoc/node6.html
+# %ext    - File extension
+# %%      - literal % (why would you want this?)
+#
+# If an entry is not available an empty string is used.
+filefmt = %year/%author - %title.%ext

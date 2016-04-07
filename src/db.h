@@ -1,8 +1,10 @@
 #ifndef DB_H
 #define DB_H
 
-void db_init(char *dbpath, char *fspath);
+/* Initialize database and filesystem */
+void db_init();
 
+/* Close and commit database and filesystem */
 void db_close();
 
 #endif

@@ -66,15 +66,15 @@ static char *resolve_tilde(const char *path) {
 
 	int res = glob(head, GLOB_TILDE, NULL, &globbuf);
 	free(head);
-	if (res == GLOB_NOMATCH || globbuf.gl_pathc != 1)
+	if (res == GLOB_NOMATCH || globbuf.gl_pathc != 1) {
 		result = safe_strdup(path);
-	else if (res != 0) {
+	} else if (res != 0) {
 		die("glob() failed\n");
 	} else {
 		head = globbuf.gl_pathv[0];
 		result = calloc(strlen(head) + (tail ? strlen(tail) : 0) + 1, 1);
 		strncpy(result, head, strlen(head));
-		if(tail){
+		if (tail){
 			strncat(result, tail, strlen(tail));
 		}
 	}
@@ -84,8 +84,8 @@ static char *resolve_tilde(const char *path) {
 }
 
 static char *get_config_path(char *cp) {
-	if(cp != NULL){
-		if(path_exists(cp)){
+	if (cp != NULL){
+		if (path_exists(cp)){
 			return cp;
 		}
 		die("Configuration file at %s doesn't exist\n", cp);
@@ -144,29 +144,31 @@ void update_config(struct btd_config *config, char *key, char *value){
 	key = rtrim(ltrim(key));
 
 	/* If the key is empty or the line starts with a comment we skip */
-	if(key[0] == '#' || strlen(key) == 0){
+	if (key[0] == '#' || strlen(key) == 0){
 		return;
 	}
 
 	/* If the key contains a comment we skip */
-	if(strchr("key", (char)'#') != NULL){
+	if (strchr("key", (char)'#') != NULL){
 		return;
 	}
 	value[strcspn(value, "#")] = '\0';
 	value = rtrim(ltrim(value));
 
 	/* If the value stripped of comments is empty we skip */
-	if(strlen(value) == 0){
+	if (strlen(value) == 0){
 		return;
 	}
 
 	/* Configuration options */
-	if(strcmp(key, "socket") == 0){
+	if (strcmp(key, "socket") == 0){
 		config->socket = resolve_tilde(value);
-	} else if(strcmp(key, "db") == 0){
+	} else if (strcmp(key, "db") == 0){
 		config->db = resolve_tilde(value);
-	} else if(strcmp(key, "files") == 0){
+	} else if (strcmp(key, "files") == 0){
 		config->files = resolve_tilde(value);
+	} else if (strcmp(key, "filefmt") == 0){
+		config->filefmt = resolve_tilde(value);
 	}
 }
 
@@ -192,10 +194,10 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	btd_log(2, "Opening config at '%s'\n", config->configpath);
 	fp = fopen(config->configpath, "r");
 
-	while(getline(&line, &len, fp) != -1) {
+	while (getline(&line, &len, fp) != -1) {
 		sep = strcspn(line, "=");
 		key = strndup(line, sep);
-		if(key == NULL){
+		if (key == NULL){
 			die("strndup() failed\n");
 		}
 		update_config(config, key, line+sep+1);
@@ -216,10 +218,12 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"\n"
 		"socket: '%s'\n"
 		"db: '%s'\n"
-		"files: '%s'\n",
+		"files: '%s'\n"
+		"filefmt: '%s'\n",
 			config->configpath,
 			config->socket,
 			config->db,
-			config->files
+			config->files,
+			config->filefmt
 			);
 }
