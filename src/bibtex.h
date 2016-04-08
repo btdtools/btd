@@ -62,7 +62,7 @@ struct bibtex_object {
 };
 
 /* Parse exactly one bibtex object, returns 0 when success */
-struct bibtex_object *bibtex_parse(FILE *istream, char *errmsg);
+struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg);
 
 /* Print a bibtex object */
 void bibtex_print(FILE *ostream, struct bibtex_object *obj);
