@@ -46,8 +46,9 @@ char *bibtex_field_str(bibtex_field field, char *other)
 	case BIBTEX_FIELD_TYPE: return "type";
 	case BIBTEX_FIELD_VOLUME: return "volume";
 	case BIBTEX_FIELD_YEAR: return "year";
-	case BIBTEX_FIELD_OTHER: return other;
+	default:;
 	}
+	return other;
 }
 
 char *bibtex_entry_str(bibtex_entrytype type)
@@ -67,8 +68,9 @@ char *bibtex_entry_str(bibtex_entrytype type)
 	case BIBTEX_ENTRY_PROCEEDINGS: return "proceedings";
 	case BIBTEX_ENTRY_TECHREPORT: return "techreport";
 	case BIBTEX_ENTRY_UNPUBLISHED: return "unpublished";
-	case BIBTEX_ENTRY_UNKNOWN: return NULL;
+	default:;
 	}
+	return NULL;
 }
 
 bibtex_entrytype bibtex_str_entry(char *str)
@@ -208,7 +210,7 @@ struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
 			while(isdigit(c = fgetc(istream)))
 				buf[bufloc++] = c;
 		else if (c == '"') {
-			while(c = fgetc(istream)){
+			while((c = fgetc(istream)) != EOF){
 				buf[bufloc++] = c;
 				if(c == '\\')
 					buf[bufloc++] = fgetc(istream);
@@ -218,7 +220,7 @@ struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
 			c = fgetc(istream);
 		} else if (c == '{') {
 			depth = 1;
-			while(c = fgetc(istream)){
+			while((c = fgetc(istream) != EOF)){
 				buf[bufloc++] = c;
 				if(c == '\\')
 					buf[bufloc++] = fgetc(istream);
