@@ -49,6 +49,9 @@ char *bibtex_entry_str(bibtex_entrytype type);
 /* Str to entry */
 bibtex_entrytype bibtex_str_entry(char *str);
 
+/* Retrieve a field */
+char *bibtex_get_field(struct bibtex_object *obj, char *field);
+
 /* Parse exactly one bibtex object, returns 0 when success */
 struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg);
 

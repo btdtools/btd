@@ -1,3 +1,6 @@
+#define _GNU_SOURCE
+
+#include <ctype.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +14,13 @@
 #include "misc.h"
 #include "log.h"
 #include "db.h"
+
+#define MAXCMDLEN 8
+#define FDWRITE(fd, str, as...) {\
+	char *msgpointer; \
+	asprintf(&msgpointer, str, ## as); \
+	write(fd, msgpointer, strlen(msgpointer)); \
+	free(msgpointer);}
 
 struct btd_config *config;
 int socket_fd;
@@ -34,19 +44,43 @@ void sig_handler(int signo)
 	}
 }
 
-int connection_handler(int connection_fd)
+int connection_handler(int fd)
 {
-	FILE *connection_stream = fdopen(connection_fd, "r");
+	char cmdbuf[MAXCMDLEN+1];
+	int cmdbuf_pos;
 
-//	nbytes = read(connection_fd, buffer, 256);
-//	buffer[nbytes] = '\0';
-
-//	printf("MESSAGE FROM CLIENT: %s\n", buffer);
-//	nbytes = snprintf(buffer, 256, "hello from the server");
-//	write(connection_fd, buffer, nbytes);
-
+	while(true) {
+		cmdbuf_pos = 0;
+		do {
+			if(read(fd, ((char *)cmdbuf)+cmdbuf_pos, 1) != 1){
+				printf("early eof?");
+				break;
+			}
+		} while(isalpha(cmdbuf[cmdbuf_pos++]) && cmdbuf_pos<MAXCMDLEN);
+		if(cmdbuf_pos >= MAXCMDLEN){
+			FDWRITE(fd, "err Command exceeded maximum length\n");
+			char c;
+			do {
+				read(fd, &c, 1);
+			} while(c != EOF && c != '\n');
+		} else if(!isspace(cmdbuf[cmdbuf_pos-1])){
+			FDWRITE(fd, "err Command should be terminated by a space\n");
+		} else {
+			cmdbuf[cmdbuf_pos-1] = '\0';
+			printf("Parsed command: '%s'\n", cmdbuf);
+			if(strcmp("bye", cmdbuf) == 0){
+				FDWRITE(fd, "bye\n");
+				break;
+			} else {
+				FDWRITE(fd, "err Unknown command: '%s'\n", cmdbuf);
+			}
+		}
+	};
 	btd_log(1, "Closing client...\n");
-	fclose(connection_stream);
+	if(close(fd) != 0) {
+		perror("close");
+		return 1;
+	}
 	return 0;
 }
 

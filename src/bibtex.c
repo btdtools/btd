@@ -51,6 +51,36 @@ char *bibtex_field_str(bibtex_field field, char *other)
 	return other;
 }
 
+bibtex_field bibtex_str_field(char *str)
+{
+	if(strcmp(str, "address") == 0) return BIBTEX_FIELD_ADDRESS;
+	if(strcmp(str, "annote") == 0) return BIBTEX_FIELD_ANNOTE;
+	if(strcmp(str, "author") == 0) return BIBTEX_FIELD_AUTHOR;
+	if(strcmp(str, "booktitle") == 0) return BIBTEX_FIELD_BOOKTITLE;
+	if(strcmp(str, "chapter") == 0) return BIBTEX_FIELD_CHAPTER;
+	if(strcmp(str, "crossref") == 0) return BIBTEX_FIELD_CROSSREF;
+	if(strcmp(str, "edition") == 0) return BIBTEX_FIELD_EDITION;
+	if(strcmp(str, "editor") == 0) return BIBTEX_FIELD_EDITOR;
+	if(strcmp(str, "howpublished") == 0) return BIBTEX_FIELD_HOWPUBLISHED;
+	if(strcmp(str, "institution") == 0) return BIBTEX_FIELD_INSTITUTION;
+	if(strcmp(str, "journal") == 0) return BIBTEX_FIELD_JOURNAL;
+	if(strcmp(str, "key") == 0) return BIBTEX_FIELD_KEY;
+	if(strcmp(str, "month") == 0) return BIBTEX_FIELD_MONTH;
+	if(strcmp(str, "note") == 0) return BIBTEX_FIELD_NOTE;
+	if(strcmp(str, "number") == 0) return BIBTEX_FIELD_NUMBER;
+	if(strcmp(str, "organization") == 0) return BIBTEX_FIELD_ORGANIZATION;
+	if(strcmp(str, "pages") == 0) return BIBTEX_FIELD_PAGES;
+	if(strcmp(str, "publisher") == 0) return BIBTEX_FIELD_PUBLISHER;
+	if(strcmp(str, "school") == 0) return BIBTEX_FIELD_SCHOOL;
+	if(strcmp(str, "series") == 0) return BIBTEX_FIELD_SERIES;
+	if(strcmp(str, "title") == 0) return BIBTEX_FIELD_TITLE;
+	if(strcmp(str, "type") == 0) return BIBTEX_FIELD_TYPE;
+	if(strcmp(str, "volume") == 0) return BIBTEX_FIELD_VOLUME;
+	if(strcmp(str, "year") == 0) return BIBTEX_FIELD_YEAR;
+	return BIBTEX_FIELD_OTHER;
+}
+
+
 char *bibtex_entry_str(bibtex_entrytype type)
 {
 	switch(type){
@@ -92,35 +122,17 @@ bibtex_entrytype bibtex_str_entry(char *str)
 	return BIBTEX_ENTRY_UNKNOWN;
 }
 
-bibtex_field bibtex_str_field(char *str)
+char *bibtex_get_field_str(struct bibtex_object *obj, char *fieldstr)
 {
-	if(strcmp(str, "address") == 0) return BIBTEX_FIELD_ADDRESS;
-	if(strcmp(str, "annote") == 0) return BIBTEX_FIELD_ANNOTE;
-	if(strcmp(str, "author") == 0) return BIBTEX_FIELD_AUTHOR;
-	if(strcmp(str, "booktitle") == 0) return BIBTEX_FIELD_BOOKTITLE;
-	if(strcmp(str, "chapter") == 0) return BIBTEX_FIELD_CHAPTER;
-	if(strcmp(str, "crossref") == 0) return BIBTEX_FIELD_CROSSREF;
-	if(strcmp(str, "edition") == 0) return BIBTEX_FIELD_EDITION;
-	if(strcmp(str, "editor") == 0) return BIBTEX_FIELD_EDITOR;
-	if(strcmp(str, "howpublished") == 0) return BIBTEX_FIELD_HOWPUBLISHED;
-	if(strcmp(str, "institution") == 0) return BIBTEX_FIELD_INSTITUTION;
-	if(strcmp(str, "journal") == 0) return BIBTEX_FIELD_JOURNAL;
-	if(strcmp(str, "key") == 0) return BIBTEX_FIELD_KEY;
-	if(strcmp(str, "month") == 0) return BIBTEX_FIELD_MONTH;
-	if(strcmp(str, "note") == 0) return BIBTEX_FIELD_NOTE;
-	if(strcmp(str, "number") == 0) return BIBTEX_FIELD_NUMBER;
-	if(strcmp(str, "organization") == 0) return BIBTEX_FIELD_ORGANIZATION;
-	if(strcmp(str, "pages") == 0) return BIBTEX_FIELD_PAGES;
-	if(strcmp(str, "publisher") == 0) return BIBTEX_FIELD_PUBLISHER;
-	if(strcmp(str, "school") == 0) return BIBTEX_FIELD_SCHOOL;
-	if(strcmp(str, "series") == 0) return BIBTEX_FIELD_SERIES;
-	if(strcmp(str, "title") == 0) return BIBTEX_FIELD_TITLE;
-	if(strcmp(str, "type") == 0) return BIBTEX_FIELD_TYPE;
-	if(strcmp(str, "volume") == 0) return BIBTEX_FIELD_VOLUME;
-	if(strcmp(str, "year") == 0) return BIBTEX_FIELD_YEAR;
-	return BIBTEX_FIELD_OTHER;
+	bibtex_field field = bibtex_str_field(fieldstr);
+	for(struct bibtex_entry *hd = obj->head; hd != NULL; hd = hd->next){
+		if((hd->field == BIBTEX_FIELD_OTHER && strcmp(fieldstr, hd->key) == 0)
+				|| hd->field == field){
+			return hd->value;
+		}
+	}
+	return NULL;
 }
-
 
 struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
 {
@@ -254,10 +266,9 @@ void bibtex_print(FILE *ostream, struct bibtex_object *obj)
 {
 	struct bibtex_entry *head = obj->head;
 	fprintf(ostream, "@%s{%s\n", bibtex_entry_str(obj->type), obj->identifier);
-	while(head != NULL) {
+	for(struct bibtex_entry *hd = obj->head; hd != NULL; hd = hd->next){
 		fprintf(ostream, "\t,%s = %s\n",
 				bibtex_field_str(head->field, head->key), head->value);
-		head = head->next;
 	}
 	fprintf(ostream, "}");
 }
