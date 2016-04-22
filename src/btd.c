@@ -14,6 +14,7 @@
 #include "misc.h"
 #include "log.h"
 #include "db.h"
+#include "bibtex.h"
 
 #define MAXCMDLEN 8
 #define FDWRITE(fd, str, as...) {\
@@ -48,12 +49,14 @@ int connection_handler(int fd)
 {
 	char cmdbuf[MAXCMDLEN+1];
 	int cmdbuf_pos;
+	bool stop = false;
 
-	while(true) {
+	while(!stop) {
 		cmdbuf_pos = 0;
 		do {
 			if(read(fd, ((char *)cmdbuf)+cmdbuf_pos, 1) != 1){
 				printf("early eof?");
+				stop = true;
 				break;
 			}
 		} while(isalpha(cmdbuf[cmdbuf_pos++]) && cmdbuf_pos<MAXCMDLEN);
@@ -68,9 +71,23 @@ int connection_handler(int fd)
 		} else {
 			cmdbuf[cmdbuf_pos-1] = '\0';
 			printf("Parsed command: '%s'\n", cmdbuf);
-			if(strcmp("bye", cmdbuf) == 0){
+			if(strcmp("bibtex", cmdbuf) == 0){
+				FILE *stream = fdopen(fd, "r");
+				char *errmsg = NULL;
+				struct bibtex_object *obj = bibtex_parse(stream, &errmsg);
+				printf("PARSED!\n");
+				if(obj == NULL){
+					FDWRITE(fd, "Parsing failed\n");
+					FDWRITE(fd, errmsg);
+					free(errmsg);
+				} else {
+					db_add_bibtex(obj, NULL);
+					printf("PRINTED\n");
+					bibtex_free(obj);
+				}
+			} else if(strcmp("bye", cmdbuf) == 0){
 				FDWRITE(fd, "bye\n");
-				break;
+				stop = true;
 			} else {
 				FDWRITE(fd, "err Unknown command: '%s'\n", cmdbuf);
 			}

@@ -7,6 +7,7 @@
 #include "config.h"
 #include "log.h"
 #include "misc.h"
+#include "bibtex.h"
 
 #define VERSION "0.1"
 
@@ -51,6 +52,15 @@ void db_convert(char *version)
 			"Program version: " VERSION "\n"
 			"There is no upgrade possible\n", version);
 	}
+}
+
+void db_add_bibtex(struct bibtex_object *obj, char *filename)
+{
+	char *print = bibtex_print(obj);
+	btd_log(2, "Adding bibtex entry: '%s'", print);
+	free(print);
+	(void)obj;
+	(void)filename;
 }
 
 void db_init(struct btd_config *cfg)

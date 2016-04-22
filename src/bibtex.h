@@ -56,7 +56,7 @@ char *bibtex_get_field(struct bibtex_object *obj, char *field);
 struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg);
 
 /* Print a bibtex object */
-void bibtex_print(FILE *ostream, struct bibtex_object *obj);
+char *bibtex_print(struct bibtex_object *obj);
 
 /* Free a bibtex object */
 void bibtex_free(struct bibtex_object *obj);

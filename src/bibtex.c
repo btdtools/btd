@@ -262,15 +262,20 @@ struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
 	return obj;
 }
 
-void bibtex_print(FILE *ostream, struct bibtex_object *obj)
-{
+char *bibtex_print(struct bibtex_object *obj){
+	char *old = NULL, *new;
 	struct bibtex_entry *head = obj->head;
-	fprintf(ostream, "@%s{%s\n", bibtex_entry_str(obj->type), obj->identifier);
+	asprintf(&new, "@%s{%s\n", bibtex_entry_str(obj->type), obj->identifier);
 	for(struct bibtex_entry *hd = obj->head; hd != NULL; hd = hd->next){
-		fprintf(ostream, "\t,%s = %s\n",
+		old = new;
+		asprintf(&new, "%s\t,%s = %s\n", old,
 				bibtex_field_str(head->field, head->key), head->value);
+		free(old);
 	}
-	fprintf(ostream, "}");
+	old = new;
+	asprintf(&new, "%s}\n", old);
+	free(old);
+	return new;
 }
 
 void bibtex_free(struct bibtex_object *obj)
