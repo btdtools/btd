@@ -74,7 +74,8 @@ int connection_handler(int fd)
 			if(strcmp("bibtex", cmdbuf) == 0){
 				FILE *stream = fdopen(fd, "r");
 				char *errmsg = NULL;
-				struct bibtex_object *obj = bibtex_parse(stream, &errmsg);
+				struct bibtex_object *obj =\
+					bibtex_parse(stream, &errmsg, config->check_fields);
 				if(obj == NULL){
 					FDWRITE(fd, "Parsing failed\n");
 					FDWRITE(fd, errmsg);

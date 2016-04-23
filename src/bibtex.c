@@ -80,7 +80,6 @@ bibtex_field bibtex_str_field(char *str)
 	return BIBTEX_FIELD_OTHER;
 }
 
-
 char *bibtex_entry_str(bibtex_entrytype type)
 {
 	switch(type){
@@ -138,18 +137,20 @@ char *bibtex_get_author(struct bibtex_object *obj)
 {
 	char *tmp;
 	switch(obj->type){
+		case BIBTEX_ENTRY_BOOK:
 		case BIBTEX_ENTRY_INBOOK:
-			tmp = bibtex_get_field(obj, "author");
-			return tmp == NULL ? bibtex_get_field(obj, "editor") : tmp;
+			tmp = bibtex_get_field_str(obj, "author");
+			return tmp == NULL ? bibtex_get_field_str(obj, "editor") : tmp;
 		case BIBTEX_ENTRY_PROCEEDINGS:
-			return bibtex_get_field(obj, "editor");
+			return bibtex_get_field_str(obj, "editor");
 		default:
-			return bibtex_get_field(obj, "author");
+			return bibtex_get_field_str(obj, "author");
 	}
 
 }
 
-struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
+struct bibtex_object *bibtex_parse(
+		FILE *istream, char **errmsg, bool check_fields)
 {
 	struct bibtex_object *obj = malloc(sizeof (struct bibtex_object));
 	struct bibtex_entry *current;
@@ -216,7 +217,7 @@ struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
 			buf[bufloc++] = c;
 		}
 		buf[bufloc] = '\0';
-		if((current->field = bibtex_str_entry(buf)) == BIBTEX_FIELD_OTHER)
+		if((current->field = bibtex_str_field(buf)) == BIBTEX_FIELD_OTHER)
 			current->key = safe_strdup(buf);
 
 		//skip whitespace
@@ -247,17 +248,17 @@ struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
 			c = fgetc(istream);
 		} else if (c == '{') {
 			depth = 1;
-			while((c = fgetc(istream) != EOF)){
+			while((c = fgetc(istream)) != EOF){
+				if(depth == 0)
+					break;
 				buf[bufloc++] = c;
 				if(c == '\\')
 					buf[bufloc++] = fgetc(istream);
 				else if(c == '{')
 					depth++;
 				else if (c == '}')
-					if(--depth == 0)
-						break;
+					depth--;
 			}
-			c = fgetc(istream);
 		} else {
 			EXPECT(c, "digit, '\"' or '{'");
 			bibtex_free(obj);
@@ -268,23 +269,103 @@ struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
 		//skip whitespace
 		SKIP_WHITE(c, istream);
 
+		printf("key: '%s'\n", bibtex_field_str(current->field, ""));
+		printf("key: '%s'\n", current->key);
+		printf("value: '%s'\n", buf);
 		current->value = safe_strdup(buf);
-		current->next = obj->head;
-		obj->head = current;
+		current->next = NULL;
+		if(obj->head == NULL){
+			obj->head = current;
+		} else {
+			struct bibtex_entry *c = obj->head;
+			while(c->next != NULL){
+				c = c->next;
+			}
+			c->next = current;
+		}
 	}
 	if(c != '}')
 		EXPECT(c, "'}'");
+	
+#define REQUIRE_EITHER(s1, s2)\
+	if(bibtex_get_field_str(obj, s1) == NULL ||\
+			bibtex_get_field_str(obj, s2) == NULL){\
+		asprintf(errmsg, "%s requires either %s or %s fields\n",\
+			bibtex_entry_str(obj->type), s1, s2);\
+		bibtex_free(obj);\
+		return NULL;\
+	}
+#define REQUIRE_FIELD(s)\
+	if(bibtex_get_field_str(obj, s) == NULL){\
+		asprintf(errmsg, "%s requires the %s field\n",\
+			bibtex_entry_str(obj->type), s);\
+		bibtex_free(obj);\
+		return NULL;\
+	}
+	if(check_fields){
+		switch(obj->type){
+			case BIBTEX_ENTRY_ARTICLE:
+				REQUIRE_FIELD("author");
+				REQUIRE_FIELD("title");
+				REQUIRE_FIELD("journal");
+				REQUIRE_FIELD("year");
+				break;
+			case BIBTEX_ENTRY_BOOK:
+				REQUIRE_EITHER("author", "editor");
+				REQUIRE_FIELD("publisher");
+				REQUIRE_FIELD("year");
+			case BIBTEX_ENTRY_BOOKLET:
+			case BIBTEX_ENTRY_MANUAL:
+				REQUIRE_FIELD("title");
+				break;
+			case BIBTEX_ENTRY_INBOOK:
+				REQUIRE_EITHER("author", "editor");
+				REQUIRE_EITHER("chapter", "pages");
+				REQUIRE_FIELD("title");
+				REQUIRE_FIELD("publisher");
+				REQUIRE_FIELD("year");
+				break;
+			case BIBTEX_ENTRY_INCOLLECTION:
+				REQUIRE_FIELD("publisher");
+			case BIBTEX_ENTRY_CONFERENCE:
+			case BIBTEX_ENTRY_INPROCEEDINGS:
+				REQUIRE_FIELD("author");
+				REQUIRE_FIELD("title");
+				REQUIRE_FIELD("booktitle");
+				REQUIRE_FIELD("year");
+				break;
+			case BIBTEX_ENTRY_MASTERSTHESIS:
+			case BIBTEX_ENTRY_PHDTHESIS:
+				REQUIRE_FIELD("author");
+				REQUIRE_FIELD("school");
+			case BIBTEX_ENTRY_PROCEEDINGS:
+				REQUIRE_FIELD("title");
+				REQUIRE_FIELD("year");
+				break;
+			case BIBTEX_ENTRY_TECHREPORT:
+				REQUIRE_FIELD("author");
+				REQUIRE_FIELD("title");
+				REQUIRE_FIELD("institution");
+				REQUIRE_FIELD("year");
+				break;
+			case BIBTEX_ENTRY_UNPUBLISHED:
+				REQUIRE_FIELD("title");
+				REQUIRE_FIELD("note");
+				break;
+			default:
+				break;
+		}
+	}
 	return obj;
 }
 
 char *bibtex_print(struct bibtex_object *obj){
 	char *old = NULL, *new;
-	struct bibtex_entry *head = obj->head;
 	asprintf(&new, "@%s{%s\n", bibtex_entry_str(obj->type), obj->identifier);
 	for(struct bibtex_entry *hd = obj->head; hd != NULL; hd = hd->next){
 		old = new;
 		asprintf(&new, "%s\t,%s = %s\n", old,
-				bibtex_field_str(head->field, head->key), head->value);
+				bibtex_field_str(hd->field, hd->key), hd->value);
 		free(old);
 	}
 	old = new;

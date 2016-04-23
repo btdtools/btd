@@ -2,6 +2,7 @@
 #define BIBTEX_H
 
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef enum { 
 	BIBTEX_ENTRY_ARTICLE, BIBTEX_ENTRY_BOOK, BIBTEX_ENTRY_BOOKLET,
@@ -50,11 +51,10 @@ char *bibtex_entry_str(bibtex_entrytype type);
 bibtex_entrytype bibtex_str_entry(char *str);
 
 /* Retrieve a field */
-char *bibtex_get_field(struct bibtex_object *obj, char *field);
+char *bibtex_get_field_str(struct bibtex_object *obj, char *field);
 
 /* Get author in case of
  * - article
- * - book
  * - conference
  * - incollection
  * - inproceedings
@@ -62,8 +62,6 @@ char *bibtex_get_field(struct bibtex_object *obj, char *field);
  * - phdthesis
  * - techreport
  * - unpublished
- *
- * Maybe author 
  * - booklet(optional)
  * - manual(optional)
  * - misc(optional)
@@ -72,12 +70,14 @@ char *bibtex_get_field(struct bibtex_object *obj, char *field);
  * - proceedings(optional)
  *
  * Either author or editor
+ * - book
  * - inbook
  */
 char *bibtex_get_author(struct bibtex_object *obj);
 
 /* Parse exactly one bibtex object, returns 0 when success */
-struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg);
+struct bibtex_object *bibtex_parse(
+	FILE *istream, char **errmsg, bool check_fields);
 
 /* Print a bibtex object */
 char *bibtex_print(struct bibtex_object *obj);

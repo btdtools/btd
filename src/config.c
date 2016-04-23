@@ -169,6 +169,11 @@ void update_config(struct btd_config *config, char *key, char *value){
 		config->files = resolve_tilde(value);
 	} else if (strcmp(key, "filefmt") == 0){
 		config->filefmt = resolve_tilde(value);
+	} else if (strcmp(key, "check_fields") == 0){
+		if(strcmp(value, "true") != 0 && strcmp(value, "false") != 0){
+			die("check_fields can either be 'true' or 'false'\n");
+		}
+		config->check_fields = strcmp(value, "true") == 0;
 	}
 }
 
@@ -184,6 +189,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	config->db = safe_strdup("~/.btd/btd.db");
 	config->files = safe_strdup("~/.btd/files");
 	config->filefmt = safe_strdup(".pdf");
+	config->check_fields = safe_strdup("false");
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
 	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
@@ -222,11 +228,13 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"socket: '%s'\n"
 		"db: '%s'\n"
 		"files: '%s'\n"
-		"filefmt: '%s'\n",
+		"filefmt: '%s'\n"
+		"check_fields: '%s'\n",
 			config->configpath,
 			config->socket,
 			config->db,
 			config->files,
-			config->filefmt
+			config->filefmt,
+			config->check_fields ? "true": "false"
 			);
 }

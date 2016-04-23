@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <stdbool.h>
+
 struct btd_config
 {
 	/* Deamon options */
@@ -10,6 +12,7 @@ struct btd_config
 	char *db;
 	char *files;
 	char *filefmt;
+	bool check_fields;
 };
 
 /* Populate a structure, read from args and config file */
