@@ -75,15 +75,14 @@ int connection_handler(int fd)
 				FILE *stream = fdopen(fd, "r");
 				char *errmsg = NULL;
 				struct bibtex_object *obj = bibtex_parse(stream, &errmsg);
-				printf("PARSED!\n");
 				if(obj == NULL){
 					FDWRITE(fd, "Parsing failed\n");
 					FDWRITE(fd, errmsg);
 					free(errmsg);
 				} else {
-					db_add_bibtex(obj, NULL);
-					printf("PRINTED\n");
+					int id = db_add_bibtex(obj, "");
 					bibtex_free(obj);
+					FDWRITE(fd, "%d\n", id);
 				}
 			} else if(strcmp("bye", cmdbuf) == 0){
 				FDWRITE(fd, "bye\n");
