@@ -81,8 +81,9 @@ int db_add_bibtex(struct bibtex_object *obj, char *filename)
 	SQLITE_Q(sqlite3_bind_text(stmt, 1, obj->identifier,
 			strlen(obj->identifier), SQLITE_STATIC));
 	btd_log(2, "Binding author\n");
-	SQLITE_Q(sqlite3_bind_text(stmt, 2, "test",
-			strlen("test"), SQLITE_STATIC));
+	char *author = bibtex_get_author(obj);
+	SQLITE_Q(sqlite3_bind_text(stmt, 2, author,
+			strlen(author), SQLITE_STATIC));
 	btd_log(2, "Binding filename\n");
 	SQLITE_Q(sqlite3_bind_text(stmt, 3, filename,
 			strlen(filename), SQLITE_STATIC))

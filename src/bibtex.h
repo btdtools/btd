@@ -52,6 +52,30 @@ bibtex_entrytype bibtex_str_entry(char *str);
 /* Retrieve a field */
 char *bibtex_get_field(struct bibtex_object *obj, char *field);
 
+/* Get author in case of
+ * - article
+ * - book
+ * - conference
+ * - incollection
+ * - inproceedings
+ * - mastersthesis
+ * - phdthesis
+ * - techreport
+ * - unpublished
+ *
+ * Maybe author 
+ * - booklet(optional)
+ * - manual(optional)
+ * - misc(optional)
+ *
+ * Editor
+ * - proceedings(optional)
+ *
+ * Either author or editor
+ * - inbook
+ */
+char *bibtex_get_author(struct bibtex_object *obj);
+
 /* Parse exactly one bibtex object, returns 0 when success */
 struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg);
 

@@ -134,6 +134,21 @@ char *bibtex_get_field_str(struct bibtex_object *obj, char *fieldstr)
 	return NULL;
 }
 
+char *bibtex_get_author(struct bibtex_object *obj)
+{
+	char *tmp;
+	switch(obj->type){
+		case BIBTEX_ENTRY_INBOOK:
+			tmp = bibtex_get_field(obj, "author");
+			return tmp == NULL ? bibtex_get_field(obj, "editor") : tmp;
+		case BIBTEX_ENTRY_PROCEEDINGS:
+			return bibtex_get_field(obj, "editor");
+		default:
+			return bibtex_get_field(obj, "author");
+	}
+
+}
+
 struct bibtex_object *bibtex_parse(FILE *istream, char **errmsg)
 {
 	struct bibtex_object *obj = malloc(sizeof (struct bibtex_object));
