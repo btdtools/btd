@@ -48,7 +48,7 @@ void skip_white(FILE *stream)
 }
 
 
-char *parse_str(FILE *stream, bool escape)
+char *parse_str(FILE *stream)
 {
 	skip_white(stream);
 	int size = 32;
@@ -57,11 +57,11 @@ char *parse_str(FILE *stream, bool escape)
 	char c;
 
 	while(!isspace(c = fgetc(stream)) && c != EOF){
-		if(escape && c == '\\'){
+		if(c == '\\'){
 			c = fgetc(stream);
 		}
-		buf[position] = c;
-		if(++position >= size-1){
+		buf[position++] = c;
+		if(position >= size-1){
 			char *old = buf;
 			buf = malloc(size*2);
 			if(buf == NULL){
@@ -109,7 +109,7 @@ int connection_handler(int fd)
 
 	while(!stop) {
 		free(cmd);
-		cmd = parse_str(stream, false);
+		cmd = parse_str(stream);
 		if(cmd == NULL){
 			btd_log(1, "Early EOF?\n");
 			stop = true;
@@ -117,7 +117,7 @@ int connection_handler(int fd)
 		printf("Parsed command: '%s'\n", cmd);
 		if(strcmp("bibtex", cmd) == 0){
 			char *errmsg = NULL;
-			char *path = parse_str(stream, true);
+			char *path = parse_str(stream);
 			struct bibtex_object *obj =\
 				bibtex_parse(stream, &errmsg, config->check_fields);
 			if(obj == NULL){
@@ -129,11 +129,8 @@ int connection_handler(int fd)
 				FDWRITE(fd, "Added with id: %d\n", id);
 			}
 			free(path);
-		} else if(strcmp("list", cmd) == 0){
-			char *id = parse_str(stream, true);
-			long int liid = strtoll(id, NULL, 10);
-			//TODO
-			free(id);
+		} else if(strcmp("num", cmd) == 0){
+			FDWRITE(fd, "%d\n", db_num());
 		} else if(strcmp("bye", cmd) == 0){
 			FDWRITE(fd, "bye\n");
 			stop = true;

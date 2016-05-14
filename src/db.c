@@ -29,7 +29,7 @@ char *sqlite_create_data_table =
 	"(name TEXT, author TEXT, path TEXT, datecreated TEXT, bibtex TEXT);";
 char *sqlite_add_datarow =
 	"INSERT INTO data "
-	"(name, author, file, datecreated, bibtex)"
+	"(name, author, path, datecreated, bibtex)"
 	"VALUES (?, ?, ?, date('now'), ?);";
 
 struct btd_config *config;
@@ -155,6 +155,23 @@ void db_init(struct btd_config *cfg)
 		}
 	}
 	btd_log(2, "Filesystem initialized\n");
+}
+
+static int db_num_cb(void *nu, int argc, char **argv, char **cname)
+{
+	int *a = (int *)nu;
+	*a = atoi(argv[0]);
+	return 0;
+	(void)argc;
+	(void)cname;
+}
+
+int db_num()
+{
+	int num;
+	SQLITE_Q(sqlite3_exec(db, "SELECT Count(*) FROM data",
+			db_num_cb, &num, &sqlite_currerr));
+	return num;
 }
 
 void db_close()
