@@ -23,8 +23,64 @@
 	write(fd, msgpointer, strlen(msgpointer)); \
 	free(msgpointer);}
 
+char *PROCOTOLUSAGE =\
+	"Protocol specification:\n"\
+	"\n"\
+	"Commands are case insensitive and space has to be escaped with\\\n"\
+	""\
+	"Command Args         Info\n"\
+	"BYE                  Close the connection gracefully.\n"\
+	"HELP                 Display this help.\n"\
+	"BIBTEX  PATH SNIPPET Add a bibtex snippet to the database in\n"\
+	"                     directory DIR and use SNIPPET as the data.\n"\
+	"";
+
 struct btd_config *config;
 int socket_fd;
+
+void skip_white(FILE *stream)
+{
+	char c;
+	while(isspace(c = fgetc(stream)) || c == EOF);
+	if(c != EOF){
+		ungetc(c, stream);
+	}
+}
+
+
+char *parse_str(FILE *stream, bool escape)
+{
+	skip_white(stream);
+	int size = 32;
+	char *buf = malloc(size);
+	int position = 0;
+	char c;
+
+	while(!isspace(c = fgetc(stream)) && c != EOF){
+		if(escape && c == '\\'){
+			c = fgetc(stream);
+		}
+		buf[position] = c;
+		if(++position >= size-1){
+			char *old = buf;
+			buf = malloc(size*2);
+			if(buf == NULL){
+				perror("malloc");
+				die("Malloc failed...\n");
+			}
+			memcpy(buf = malloc(size*2), old, size);
+			size *= 2;
+			free(old);
+		}
+	}
+	if(c == EOF){
+		free(buf);
+		printf("EOF\n");
+		return NULL;
+	}
+	buf[position] = '\0';
+	return buf;
+}
 
 void cleanup()
 {
@@ -47,52 +103,47 @@ void sig_handler(int signo)
 
 int connection_handler(int fd)
 {
-	char cmdbuf[MAXCMDLEN+1];
-	int cmdbuf_pos;
+	char *cmd = NULL;
 	bool stop = false;
+	FILE *stream = fdopen(fd, "r");
 
 	while(!stop) {
-		cmdbuf_pos = 0;
-		do {
-			if(read(fd, ((char *)cmdbuf)+cmdbuf_pos, 1) != 1){
-				printf("early eof?");
-				stop = true;
-				break;
-			}
-		} while(isalpha(cmdbuf[cmdbuf_pos++]) && cmdbuf_pos<MAXCMDLEN);
-		if(cmdbuf_pos >= MAXCMDLEN){
-			FDWRITE(fd, "err Command exceeded maximum length\n");
-			char c;
-			do {
-				read(fd, &c, 1);
-			} while(c != EOF && c != '\n');
-		} else if(!isspace(cmdbuf[cmdbuf_pos-1])){
-			FDWRITE(fd, "err Command should be terminated by a space\n");
-		} else {
-			cmdbuf[cmdbuf_pos-1] = '\0';
-			printf("Parsed command: '%s'\n", cmdbuf);
-			if(strcmp("bibtex", cmdbuf) == 0){
-				FILE *stream = fdopen(fd, "r");
-				char *errmsg = NULL;
-				struct bibtex_object *obj =\
-					bibtex_parse(stream, &errmsg, config->check_fields);
-				if(obj == NULL){
-					FDWRITE(fd, "Parsing failed\n");
-					FDWRITE(fd, errmsg);
-					free(errmsg);
-				} else {
-					int id = db_add_bibtex(obj, "");
-					bibtex_free(obj);
-					FDWRITE(fd, "%d\n", id);
-				}
-			} else if(strcmp("bye", cmdbuf) == 0){
-				FDWRITE(fd, "bye\n");
-				stop = true;
-			} else {
-				FDWRITE(fd, "err Unknown command: '%s'\n", cmdbuf);
-			}
+		free(cmd);
+		cmd = parse_str(stream, false);
+		if(cmd == NULL){
+			btd_log(1, "Early EOF?\n");
+			stop = true;
 		}
-	};
+		printf("Parsed command: '%s'\n", cmd);
+		if(strcmp("bibtex", cmd) == 0){
+			char *errmsg = NULL;
+			char *path = parse_str(stream, true);
+			struct bibtex_object *obj =\
+				bibtex_parse(stream, &errmsg, config->check_fields);
+			if(obj == NULL){
+				FDWRITE(fd, "Parsing failed: %s\n", errmsg);
+				free(errmsg);
+			} else {
+				int id = db_add_bibtex(obj, path);
+				bibtex_free(obj);
+				FDWRITE(fd, "Added with id: %d\n", id);
+			}
+			free(path);
+		} else if(strcmp("list", cmd) == 0){
+			char *id = parse_str(stream, true);
+			long int liid = strtoll(id, NULL, 10);
+			//TODO
+			free(id);
+		} else if(strcmp("bye", cmd) == 0){
+			FDWRITE(fd, "bye\n");
+			stop = true;
+		} else if(strcmp("help", cmd) == 0){
+			FDWRITE(fd, PROCOTOLUSAGE);
+		} else {
+			FDWRITE(fd, "err Unknown command: '%s'\n", cmd);
+			FDWRITE(fd, "use HELP to show protocol specification\n");
+		}
+	}
 	btd_log(1, "Closing client...\n");
 	if(close(fd) != 0) {
 		perror("close");

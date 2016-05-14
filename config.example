@@ -31,5 +31,8 @@ files = ./files/files
 # If an entry is not available an empty string is used.
 filefmt = %year/%author - %title.%ext
 
+# Path separator for files in internal database
+pathsep = /
+
 # Flag to check wether the bibtex snippets have the complete specs
 check_fields = true

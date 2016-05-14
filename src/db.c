@@ -26,7 +26,7 @@ char *sqlite_create_cfg_table =
 	"VALUES(1," VERSION ", date('now'));";
 char *sqlite_create_data_table =
 	"CREATE TABLE IF NOT EXISTS data"
-	"(name TEXT, author TEXT, file TEXT, datecreated TEXT, bibtex TEXT);";
+	"(name TEXT, author TEXT, path TEXT, datecreated TEXT, bibtex TEXT);";
 char *sqlite_add_datarow =
 	"INSERT INTO data "
 	"(name, author, file, datecreated, bibtex)"
@@ -68,7 +68,7 @@ void db_convert(char *version)
 	}
 }
 
-int db_add_bibtex(struct bibtex_object *obj, char *filename)
+int db_add_bibtex(struct bibtex_object *obj, char *path)
 {
 	sqlite3_int64 rowid = sqlite3_last_insert_rowid(db);
 	char *print = bibtex_print(obj);
@@ -84,9 +84,9 @@ int db_add_bibtex(struct bibtex_object *obj, char *filename)
 	char *author = bibtex_get_author(obj);
 	SQLITE_Q(sqlite3_bind_text(stmt, 2, author,
 			strlen(author), SQLITE_STATIC));
-	btd_log(2, "Binding filename\n");
-	SQLITE_Q(sqlite3_bind_text(stmt, 3, filename,
-			strlen(filename), SQLITE_STATIC))
+	btd_log(2, "Binding path\n");
+	SQLITE_Q(sqlite3_bind_text(stmt, 3, path,
+			strlen(path), SQLITE_STATIC))
 	btd_log(2, "Binding bibtex\n");
 	SQLITE_Q(sqlite3_bind_text(stmt, 4, print,
 			strlen(print), SQLITE_STATIC));

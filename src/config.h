@@ -12,6 +12,7 @@ struct btd_config
 	char *db;
 	char *files;
 	char *filefmt;
+	char *pathsep;
 	bool check_fields;
 };
 

@@ -144,9 +144,9 @@ char *bibtex_get_author(struct bibtex_object *obj)
 		case BIBTEX_ENTRY_PROCEEDINGS:
 			return bibtex_get_field_str(obj, "editor");
 		default:
-			return bibtex_get_field_str(obj, "author");
+			tmp = bibtex_get_field_str(obj, "author");
+			return tmp == NULL ? safe_strdup("") : tmp;
 	}
-
 }
 
 struct bibtex_object *bibtex_parse(
