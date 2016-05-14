@@ -30,6 +30,7 @@ char *PROCOTOLUSAGE =\
 	""\
 	"Command Args         Info\n"\
 	"BYE                  Close the connection gracefully.\n"\
+	"NUM                  Print the number of entries available.\n"\
 	"HELP                 Display this help.\n"\
 	"BIBTEX  PATH SNIPPET Add a bibtex snippet to the database in\n"\
 	"                     directory DIR and use SNIPPET as the data.\n"\
