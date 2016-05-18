@@ -12,6 +12,12 @@ int db_add_bibtex(struct bibtex_object *obj, char *path);
 /* Ask how many datapoints there are */
 int db_num();
 
+/* Get a bibtex snippet */
+char *db_get(long long int id);
+
+/* Print a list of bibtex snippets */
+void *db_list(int fd);
+
 /* Close and commit database and filesystem */
 void db_close();
 

@@ -361,15 +361,15 @@ struct bibtex_object *bibtex_parse(
 
 char *bibtex_print(struct bibtex_object *obj){
 	char *old = NULL, *new;
-	asprintf(&new, "@%s{%s\n", bibtex_entry_str(obj->type), obj->identifier);
+	asprintf(&new, "@%s{%s ", bibtex_entry_str(obj->type), obj->identifier);
 	for(struct bibtex_entry *hd = obj->head; hd != NULL; hd = hd->next){
 		old = new;
-		asprintf(&new, "%s\t,%s = %s\n", old,
+		asprintf(&new, "%s,%s=%s", old,
 				bibtex_field_str(hd->field, hd->key), hd->value);
 		free(old);
 	}
 	old = new;
-	asprintf(&new, "%s}\n", old);
+	asprintf(&new, "%s}", old);
 	free(old);
 	return new;
 }

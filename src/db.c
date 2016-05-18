@@ -1,8 +1,11 @@
+#define _GNU_SOURCE
+
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #include "config.h"
 #include "log.h"
@@ -99,8 +102,6 @@ int db_add_bibtex(struct bibtex_object *obj, char *path)
 
 	free(print);
 	sqlite3_int64 rowid2 = sqlite3_last_insert_rowid(db);
-	printf("Old rowid: %llu\n", rowid);;
-	printf("New rowid: %llu\n", rowid2);;
 	if(rowid2 != 0 && rowid != rowid2){
 		return rowid2;
 	} else {
@@ -172,6 +173,65 @@ int db_num()
 	SQLITE_Q(sqlite3_exec(db, "SELECT Count(*) FROM data",
 			db_num_cb, &num, &sqlite_currerr));
 	return num;
+}
+
+char *db_get(long long int id)
+{
+	char *l = NULL;
+	SQLITE_Q(sqlite3_prepare_v2(db, "SELECT bibtex FROM data WHERE rowid=?",
+			-1, &stmt, 0));
+
+	SQLITE_Q(sqlite3_bind_int(stmt, 1, id));
+
+	rc = sqlite3_step(stmt);
+	printf("hoi\n");
+	printf("rc: %d\n", rc);
+	if(rc == SQLITE_ROW){
+		printf("%d\n", sqlite3_column_count(stmt));
+		l = safe_strdup((char *)sqlite3_column_text(stmt, 0));
+	}
+
+	SQLITE_Q(sqlite3_finalize(stmt));
+	return l;
+}
+
+static void fd_print(int fd, char *m, unsigned int len)
+{
+	if(strlen(m) >= len){
+		write(fd, m, len-3);
+		write(fd, "...", 3);
+	} else {
+		write(fd, m, strlen(m));
+	}
+}
+
+static int db_list_cb(void *nu, int argc, char **argv, char **cname)
+{
+	int *fd = (int *)nu;
+	fd_print(*fd, argv[0], 10);
+	write(*fd, "\t", 1);
+	fd_print(*fd, argv[1], 10);
+	write(*fd, "\t", 1);
+	fd_print(*fd, argv[2], 10);
+	write(*fd, "\t", 1);
+	fd_print(*fd, argv[3], 10);
+	write(*fd, "\t", 1);
+	fd_print(*fd, argv[4], 20);
+	write(*fd, "\t", 1);
+	fd_print(*fd, argv[5], 20);
+	write(*fd, "\n", 1);
+	return 0;
+	(void)argc;
+	(void)cname;
+}
+
+void db_list(int fd)
+{
+	fd_print(fd, "id\tname\tauthor\tpath\tdate\tbibtex\n", 99);
+	SQLITE_Q(sqlite3_exec(db, 
+		"SELECT rowid, name, author, path, datecreated, bibtex FROM data",
+			db_list_cb, &fd, &sqlite_currerr));
+	fd_print(fd, "\n", 99);
 }
 
 void db_close()

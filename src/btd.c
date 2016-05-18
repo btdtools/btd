@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 
 #include <ctype.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +32,8 @@ char *PROCOTOLUSAGE =\
 	"Command Args         Info\n"\
 	"BYE                  Close the connection gracefully.\n"\
 	"NUM                  Print the number of entries available.\n"\
+	"SHOW    ID           Show the snippet matching ID.\n"\
+	"LIST                 Print a summary.\n"\
 	"HELP                 Display this help.\n"\
 	"BIBTEX  PATH SNIPPET Add a bibtex snippet to the database in\n"\
 	"                     directory DIR and use SNIPPET as the data.\n"\
@@ -116,30 +119,46 @@ int connection_handler(int fd)
 			stop = true;
 		}
 		printf("Parsed command: '%s'\n", cmd);
-		if(strcmp("bibtex", cmd) == 0){
+		if(strcasecmp("bibtex", cmd) == 0){
 			char *errmsg = NULL;
 			char *path = parse_str(stream);
 			struct bibtex_object *obj =\
 				bibtex_parse(stream, &errmsg, config->check_fields);
 			if(obj == NULL){
-				FDWRITE(fd, "Parsing failed: %s\n", errmsg);
+				FDWRITE(fd, "1\nParsing failed: %s\n", errmsg);
 				free(errmsg);
 			} else {
 				int id = db_add_bibtex(obj, path);
 				bibtex_free(obj);
-				FDWRITE(fd, "Added with id: %d\n", id);
+				FDWRITE(fd, "0\nAdded with id: %d\n", id);
 			}
 			free(path);
-		} else if(strcmp("num", cmd) == 0){
-			FDWRITE(fd, "%d\n", db_num());
-		} else if(strcmp("bye", cmd) == 0){
-			FDWRITE(fd, "bye\n");
+		} else if(strcasecmp("num", cmd) == 0){
+			FDWRITE(fd, "0\n%d\n", db_num());
+		} else if(strcasecmp("show", cmd) == 0){
+			char *num_str = parse_str(stream);
+			long long int num = strtoll(num_str, NULL, 10);
+			if(num <= 0){
+				FDWRITE(fd, "1\nNumber should be positive\n");
+			} else {
+				char *bibtex_str = db_get(num);
+				if(bibtex_str == NULL){
+					FDWRITE(fd, "1\nNumber not a valid ID\n");
+				} else {
+					FDWRITE(fd, "0\n%s\n", bibtex_str);
+					free(bibtex_str);
+				}
+			}
+			free(num_str);
+		} else if(strcasecmp("list", cmd) == 0){
+			db_list(fd);
+		} else if(strcasecmp("bye", cmd) == 0){
+			FDWRITE(fd, "0\nbye\n");
 			stop = true;
-		} else if(strcmp("help", cmd) == 0){
-			FDWRITE(fd, PROCOTOLUSAGE);
+		} else if(strcasecmp("help", cmd) == 0){
+			FDWRITE(fd, "0\n%s\n", PROCOTOLUSAGE);
 		} else {
-			FDWRITE(fd, "err Unknown command: '%s'\n", cmd);
-			FDWRITE(fd, "use HELP to show protocol specification\n");
+			FDWRITE(fd, "1\nUnknown command: '%s'\n", cmd);
 		}
 	}
 	btd_log(1, "Closing client...\n");
