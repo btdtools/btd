@@ -45,7 +45,7 @@ int socket_fd;
 void skip_white(FILE *stream)
 {
 	char c;
-	while(isspace(c = fgetc(stream)) || c == EOF);
+	while(isspace(c = fgetc(stream)) && c != EOF);
 	if(c != EOF){
 		ungetc(c, stream);
 	}
@@ -66,20 +66,14 @@ char *parse_str(FILE *stream)
 		}
 		buf[position++] = c;
 		if(position >= size-1){
-			char *old = buf;
-			buf = malloc(size*2);
-			if(buf == NULL){
-				perror("malloc");
-				die("Malloc failed...\n");
+			if((buf = realloc(buf, size *= 2)) == NULL){
+				perror("realloc");
+				die("Realloc failed...\n");
 			}
-			memcpy(buf = malloc(size*2), old, size);
-			size *= 2;
-			free(old);
 		}
 	}
 	if(c == EOF){
 		free(buf);
-		printf("EOF\n");
 		return NULL;
 	}
 	buf[position] = '\0';
@@ -108,15 +102,14 @@ void sig_handler(int signo)
 int connection_handler(int fd)
 {
 	char *cmd = NULL;
-	bool stop = false;
 	FILE *stream = fdopen(fd, "r");
 
-	while(!stop) {
+	while(true) {
 		free(cmd);
 		cmd = parse_str(stream);
 		if(cmd == NULL){
 			btd_log(1, "Early EOF?\n");
-			stop = true;
+			break;
 		}
 		printf("Parsed command: '%s'\n", cmd);
 		if(strcasecmp("bibtex", cmd) == 0){
@@ -151,10 +144,11 @@ int connection_handler(int fd)
 			}
 			free(num_str);
 		} else if(strcasecmp("list", cmd) == 0){
+			FDWRITE(fd, "0\n");
 			db_list(fd);
 		} else if(strcasecmp("bye", cmd) == 0){
 			FDWRITE(fd, "0\nbye\n");
-			stop = true;
+			break;
 		} else if(strcasecmp("help", cmd) == 0){
 			FDWRITE(fd, "0\n%s\n", PROCOTOLUSAGE);
 		} else {

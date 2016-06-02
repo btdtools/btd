@@ -231,7 +231,6 @@ void db_list(int fd)
 	SQLITE_Q(sqlite3_exec(db, 
 		"SELECT rowid, name, author, path, datecreated, bibtex FROM data",
 			db_list_cb, &fd, &sqlite_currerr));
-	fd_print(fd, "\n", 99);
 }
 
 void db_close()
