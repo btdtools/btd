@@ -51,7 +51,6 @@ void skip_white(FILE *stream)
 	}
 }
 
-
 char *parse_str(FILE *stream)
 {
 	skip_white(stream);

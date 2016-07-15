@@ -1,7 +1,6 @@
 #define _GNU_SOURCE
 
 #include <argp.h>
-#include <glob.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,32 +55,6 @@ static struct argp argp = {
 	.children=NULL,
 	.help_filter=NULL,
 	.argp_domain=NULL};
-
-static char *resolve_tilde(const char *path) {
-	static glob_t globbuf;
-	char *head, *tail, *result = NULL;
-
-	tail = strchr(path, '/');
-	head = strndup(path, tail ? (size_t)(tail - path) : strlen(path));
-
-	int res = glob(head, GLOB_TILDE, NULL, &globbuf);
-	free(head);
-	if (res == GLOB_NOMATCH || globbuf.gl_pathc != 1) {
-		result = safe_strdup(path);
-	} else if (res != 0) {
-		die("glob() failed\n");
-	} else {
-		head = globbuf.gl_pathv[0];
-		result = calloc(strlen(head) + (tail ? strlen(tail) : 0) + 1, 1);
-		strncpy(result, head, strlen(head));
-		if (tail){
-			strncat(result, tail, strlen(tail));
-		}
-	}
-	globfree(&globbuf);
-
-	return result;
-}
 
 static char *get_config_path(char *cp) {
 	if (cp != NULL){
