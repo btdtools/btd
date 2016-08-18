@@ -137,7 +137,7 @@ int main (int argc, char **argv)
 	}
 
 	/* Parse args and config */
-	config = malloc(sizeof (struct btd_config));
+	config = safe_malloc(sizeof (struct btd_config));
 	btd_config_populate(config, argc, argv);
 	btd_log(2, "Config parsing done\n");
 	btd_config_print(config, stdout);

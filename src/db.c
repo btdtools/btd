@@ -51,7 +51,7 @@ static int db_get_version_cb(void *nu, int argc, char **argv, char **cname)
 
 static char **db_get_version()
 {
-	char **data = malloc((sizeof (char*))*2);
+	char **data = safe_malloc((sizeof (char*))*2);
 	SQLITE_Q(sqlite3_exec(db, "SELECT version, datecreated FROM config",
 			db_get_version_cb, data, &sqlite_currerr));
 	return data;

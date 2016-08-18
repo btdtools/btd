@@ -8,6 +8,15 @@
 #include <arpa/inet.h>
 #include "misc.h"
 
+void *safe_malloc(unsigned long int s)
+{
+	void *r = malloc(s);
+	if(r == NULL){
+		die("malloc() failed");
+	}
+	return r;
+}
+
 char *ltrim(char *s)
 {
 	while(isspace(*s)){
@@ -41,11 +50,7 @@ char *safe_strcat(char **ab, int n)
 	for(int i = 0; i<n; i++){
 		len += strlen(ab[i]);
 	}
-	char *r = malloc(len+1);
-	if(r == NULL){
-		die("malloc() failed");
-	}
-	return r;
+	return safe_malloc(len+1);
 }
 
 bool path_exists(const char *path)
@@ -84,7 +89,7 @@ char *parse_str(FILE *stream)
 {
 	skip_white(stream);
 	int size = 32;
-	char *buf = malloc(size);
+	char *buf = safe_malloc(size);
 	int position = 0;
 	char c;
 
@@ -120,7 +125,7 @@ void skip_white(FILE *stream)
 char *pprint_address(struct addrinfo *ai)
 {
 	/* decoration + maxlen unix socket and also ipv4 and ipv6 + null*/
-	char *r = malloc(20+108+1);
+	char *r = safe_malloc(20+108+1);
 	struct sockaddr_in *inadr;
 	struct sockaddr_in6 *in6adr;
 	switch(ai->ai_family){

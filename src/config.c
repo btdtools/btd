@@ -122,14 +122,14 @@ static void create_unixsocket(struct btd_config *config, char *path)
 	}
 	char *sa = resolve_tilde(path);
 
-	config->socket = (struct addrinfo *)malloc(sizeof(struct addrinfo));
+	config->socket = (struct addrinfo *)safe_malloc(sizeof(struct addrinfo));
     memset(config->socket, 0, sizeof(struct addrinfo));
 	config->socket->ai_family = AF_UNIX;
 	config->socket->ai_socktype = SOCK_STREAM;
 	config->socket->ai_protocol = 0;
 
 	/* Build address object */
-	config->socket->ai_addr = malloc(sizeof(struct sockaddr_un));
+	config->socket->ai_addr = safe_malloc(sizeof(struct sockaddr_un));
 	memset(config->socket->ai_addr, 0, sizeof(struct sockaddr_un));
 	config->socket->ai_addr->sa_family = AF_UNIX;
 	strcpy(config->socket->ai_addr->sa_data, sa);
@@ -195,7 +195,7 @@ void update_config(struct btd_config *config, char *key, char *value){
 			btd_log(2, "no port found so treating it as a unix socket\n");
 			create_unixsocket(config, value);
 		} else {
-			if((s = getaddrinfo(value, "1000", &hints, &result)) != 0) {
+			if((s = getaddrinfo(value, value+portindex, &hints, &result)) != 0) {
 				btd_log(2, "getaddrinfo returned %s, "
 					"treating it as an unix socket\n", gai_strerror(s));
 				value[portindex-1] = ':';

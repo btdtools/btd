@@ -23,31 +23,31 @@
 char *bibtex_field_str(bibtex_field field, char *other)
 {
 	switch(field){
-	case BIBTEX_FIELD_ADDRESS: return "address";
-	case BIBTEX_FIELD_ANNOTE: return "annote";
-	case BIBTEX_FIELD_AUTHOR: return "author";
-	case BIBTEX_FIELD_BOOKTITLE: return "booktitle";
-	case BIBTEX_FIELD_CHAPTER: return "chapter";
-	case BIBTEX_FIELD_CROSSREF: return "crossref";
-	case BIBTEX_FIELD_EDITION: return "edition";
-	case BIBTEX_FIELD_EDITOR: return "editor";
-	case BIBTEX_FIELD_HOWPUBLISHED: return "howpublished";
-	case BIBTEX_FIELD_INSTITUTION: return "institution";
-	case BIBTEX_FIELD_JOURNAL: return "journal";
-	case BIBTEX_FIELD_KEY: return "key";
-	case BIBTEX_FIELD_MONTH: return "month";
-	case BIBTEX_FIELD_NOTE: return "note";
-	case BIBTEX_FIELD_NUMBER: return "number";
-	case BIBTEX_FIELD_ORGANIZATION: return "organization";
-	case BIBTEX_FIELD_PAGES: return "pages";
-	case BIBTEX_FIELD_PUBLISHER: return "publisher";
-	case BIBTEX_FIELD_SCHOOL: return "school";
-	case BIBTEX_FIELD_SERIES: return "series";
-	case BIBTEX_FIELD_TITLE: return "title";
-	case BIBTEX_FIELD_TYPE: return "type";
-	case BIBTEX_FIELD_VOLUME: return "volume";
-	case BIBTEX_FIELD_YEAR: return "year";
-	default:;
+		case BIBTEX_FIELD_ADDRESS: return "address";
+		case BIBTEX_FIELD_ANNOTE: return "annote";
+		case BIBTEX_FIELD_AUTHOR: return "author";
+		case BIBTEX_FIELD_BOOKTITLE: return "booktitle";
+		case BIBTEX_FIELD_CHAPTER: return "chapter";
+		case BIBTEX_FIELD_CROSSREF: return "crossref";
+		case BIBTEX_FIELD_EDITION: return "edition";
+		case BIBTEX_FIELD_EDITOR: return "editor";
+		case BIBTEX_FIELD_HOWPUBLISHED: return "howpublished";
+		case BIBTEX_FIELD_INSTITUTION: return "institution";
+		case BIBTEX_FIELD_JOURNAL: return "journal";
+		case BIBTEX_FIELD_KEY: return "key";
+		case BIBTEX_FIELD_MONTH: return "month";
+		case BIBTEX_FIELD_NOTE: return "note";
+		case BIBTEX_FIELD_NUMBER: return "number";
+		case BIBTEX_FIELD_ORGANIZATION: return "organization";
+		case BIBTEX_FIELD_PAGES: return "pages";
+		case BIBTEX_FIELD_PUBLISHER: return "publisher";
+		case BIBTEX_FIELD_SCHOOL: return "school";
+		case BIBTEX_FIELD_SERIES: return "series";
+		case BIBTEX_FIELD_TITLE: return "title";
+		case BIBTEX_FIELD_TYPE: return "type";
+		case BIBTEX_FIELD_VOLUME: return "volume";
+		case BIBTEX_FIELD_YEAR: return "year";
+		default:;
 	}
 	return other;
 }
@@ -84,21 +84,21 @@ bibtex_field bibtex_str_field(char *str)
 char *bibtex_entry_str(bibtex_entrytype type)
 {
 	switch(type){
-	case BIBTEX_ENTRY_ARTICLE: return "article";
-	case BIBTEX_ENTRY_BOOK: return "book";
-	case BIBTEX_ENTRY_BOOKLET: return "booklet";
-	case BIBTEX_ENTRY_CONFERENCE: return "conference";
-	case BIBTEX_ENTRY_INBOOK: return "inbook";
-	case BIBTEX_ENTRY_INCOLLECTION: return "incollection";
-	case BIBTEX_ENTRY_INPROCEEDINGS: return "inproceedings";
-	case BIBTEX_ENTRY_MANUAL: return "manual";
-	case BIBTEX_ENTRY_MASTERSTHESIS: return "mastersthesis";
-	case BIBTEX_ENTRY_MISC: return "misc";
-	case BIBTEX_ENTRY_PHDTHESIS: return "phdthesis";
-	case BIBTEX_ENTRY_PROCEEDINGS: return "proceedings";
-	case BIBTEX_ENTRY_TECHREPORT: return "techreport";
-	case BIBTEX_ENTRY_UNPUBLISHED: return "unpublished";
-	default:;
+		case BIBTEX_ENTRY_ARTICLE: return "article";
+		case BIBTEX_ENTRY_BOOK: return "book";
+		case BIBTEX_ENTRY_BOOKLET: return "booklet";
+		case BIBTEX_ENTRY_CONFERENCE: return "conference";
+		case BIBTEX_ENTRY_INBOOK: return "inbook";
+		case BIBTEX_ENTRY_INCOLLECTION: return "incollection";
+		case BIBTEX_ENTRY_INPROCEEDINGS: return "inproceedings";
+		case BIBTEX_ENTRY_MANUAL: return "manual";
+		case BIBTEX_ENTRY_MASTERSTHESIS: return "mastersthesis";
+		case BIBTEX_ENTRY_MISC: return "misc";
+		case BIBTEX_ENTRY_PHDTHESIS: return "phdthesis";
+		case BIBTEX_ENTRY_PROCEEDINGS: return "proceedings";
+		case BIBTEX_ENTRY_TECHREPORT: return "techreport";
+		case BIBTEX_ENTRY_UNPUBLISHED: return "unpublished";
+		default:;
 	}
 	return NULL;
 }
@@ -153,7 +153,7 @@ char *bibtex_get_author(struct bibtex_object *obj)
 struct bibtex_object *bibtex_parse(
 		FILE *istream, char **errmsg, bool check_fields)
 {
-	struct bibtex_object *obj = malloc(sizeof (struct bibtex_object));
+	struct bibtex_object *obj = safe_malloc(sizeof (struct bibtex_object));
 	struct bibtex_entry *current;
 	char buf[BUFSIZE+1];
 	char c;
@@ -206,7 +206,7 @@ struct bibtex_object *bibtex_parse(
 
 	//Read key-valuepairs
 	while(c == ','){
-		current = malloc(sizeof (struct bibtex_entry));
+		current = safe_malloc(sizeof (struct bibtex_entry));
 		current->key = NULL;
 		//skip whitespace
 		c = fgetc(istream);
