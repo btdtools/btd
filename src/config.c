@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include <argp.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -75,9 +73,10 @@ static char *get_config_path(char *cp) {
 	}
 
 	xdg_config_home = resolve_tilde(xdg_config_home);
-	if (asprintf(&config_path, "%s/btd/config", xdg_config_home) == -1){
-		die("asprintf() failed\n");
-	}
+	config_path = malloc(strlen(xdg_config_home)+strlen("/btd/config"));
+	config_path[0] = '\0';
+	strcat(config_path, xdg_config_home);
+	strcat(config_path, "/btd/config");
 	free(xdg_config_home);
 
 	if (path_exists(config_path)){
@@ -100,9 +99,10 @@ static char *get_config_path(char *cp) {
 	tok = strtok(buf, ":");
 	while (tok != NULL) {
 		tok = resolve_tilde(tok);
-		if (asprintf(&config_path, "%s/btd/config", tok) == -1){
-			die("asprintf() failed\n");
-		}
+		config_path = malloc(strlen(tok)+strlen("/btd/config"));
+		config_path[0] = '\0';
+		strcat(config_path, tok);
+		strcat(config_path, "/btd/config");
 		free(tok);
 		if (path_exists(config_path)) {
 			free(buf);
