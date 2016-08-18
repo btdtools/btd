@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
@@ -18,11 +16,6 @@
 #include "bibtex.h"
 
 #define MAXCMDLEN 8
-#define FDWRITE(fd, str, as...) {\
-	char *msgpointer; \
-	asprintf(&msgpointer, str, ## as); \
-	write(fd, msgpointer, strlen(msgpointer)); \
-	free(msgpointer);}
 
 char *PROCOTOLUSAGE =\
 	"Protocol specification:\n"\
@@ -42,49 +35,14 @@ char *PROCOTOLUSAGE =\
 struct btd_config *config;
 int socket_fd;
 
-void skip_white(FILE *stream)
-{
-	char c;
-	while(isspace(c = fgetc(stream)) && c != EOF);
-	if(c != EOF){
-		ungetc(c, stream);
-	}
-}
-
-char *parse_str(FILE *stream)
-{
-	skip_white(stream);
-	int size = 32;
-	char *buf = malloc(size);
-	int position = 0;
-	char c;
-
-	while(!isspace(c = fgetc(stream)) && c != EOF){
-		if(c == '\\'){
-			c = fgetc(stream);
-		}
-		buf[position++] = c;
-		if(position >= size-1){
-			if((buf = realloc(buf, size *= 2)) == NULL){
-				perror("realloc");
-				die("Realloc failed...\n");
-			}
-		}
-	}
-	if(c == EOF){
-		free(buf);
-		return NULL;
-	}
-	buf[position] = '\0';
-	return buf;
-}
-
 void cleanup()
 {
 	btd_log(2, "Closing socket\n");
 	close(socket_fd);
 	btd_log(2, "Unlinking socket\n");
-	unlink(config->socket);
+	if(config->socket->ai_family == AF_UNIX){
+		unlink(config->socket->ai_addr->sa_data);
+	}
 	btd_log(2, "Closing database\n");
 	db_close();
 }
@@ -101,7 +59,8 @@ void sig_handler(int signo)
 int connection_handler(int fd)
 {
 	char *cmd = NULL;
-	FILE *stream = fdopen(fd, "r");
+	FILE *stream = fdopen(fd, "r+");
+	fprintf(stream, "btd %s\n", VERSION);
 
 	while(true) {
 		free(cmd);
@@ -117,46 +76,46 @@ int connection_handler(int fd)
 			struct bibtex_object *obj =\
 				bibtex_parse(stream, &errmsg, config->check_fields);
 			if(obj == NULL){
-				FDWRITE(fd, "1\nParsing failed: %s\n", errmsg);
+				fprintf(stream, "1\nParsing failed: %s\n", errmsg);
 				free(errmsg);
 			} else {
 				int id = db_add_bibtex(obj, path);
 				bibtex_free(obj);
-				FDWRITE(fd, "0\nAdded with id: %d\n", id);
+				fprintf(stream, "0\nAdded with id: %d\n", id);
 			}
 			free(path);
 		} else if(strcasecmp("num", cmd) == 0){
-			FDWRITE(fd, "0\n%d\n", db_num());
+			fprintf(stream, "0\n%d\n", db_num());
 		} else if(strcasecmp("show", cmd) == 0){
 			char *num_str = parse_str(stream);
 			long long int num = strtoll(num_str, NULL, 10);
 			if(num <= 0){
-				FDWRITE(fd, "1\nNumber should be positive\n");
+				fputs("1\nNumber should be positive\n", stream);
 			} else {
 				char *bibtex_str = db_get(num);
 				if(bibtex_str == NULL){
-					FDWRITE(fd, "1\nNumber not a valid ID\n");
+					fputs("1\nNumber not a valid ID\n", stream);
 				} else {
-					FDWRITE(fd, "0\n%s\n", bibtex_str);
+					fprintf(stream, "0\n%s\n", bibtex_str);
 					free(bibtex_str);
 				}
 			}
 			free(num_str);
 		} else if(strcasecmp("list", cmd) == 0){
-			FDWRITE(fd, "0\n");
-			db_list(fd);
+			fputs("0\n", stream);
+			db_list(stream);
 		} else if(strcasecmp("bye", cmd) == 0){
-			FDWRITE(fd, "0\nbye\n");
+			fputs("0\nbye\n", stream);
 			break;
 		} else if(strcasecmp("help", cmd) == 0){
-			FDWRITE(fd, "0\n%s\n", PROCOTOLUSAGE);
+			fprintf(stream, "0\n%s\n", PROCOTOLUSAGE);
 		} else {
-			FDWRITE(fd, "1\nUnknown command: '%s'\n", cmd);
+			fprintf(stream, "1\nUnknown command: '%s'\n", cmd);
 		}
 	}
 	btd_log(1, "Closing client...\n");
-	if(close(fd) != 0) {
-		perror("close");
+	if(fclose(stream) != 0) {
+		perror("fclose");
 		return 1;
 	}
 	return 0;
@@ -164,9 +123,7 @@ int connection_handler(int fd)
 
 int main (int argc, char **argv)
 {
-	struct sockaddr_un address;
 	int connection_fd;
-	socklen_t address_length;
 	pid_t child;
 
 	btd_init_log();
@@ -182,7 +139,7 @@ int main (int argc, char **argv)
 	/* Parse args and config */
 	config = malloc(sizeof (struct btd_config));
 	btd_config_populate(config, argc, argv);
-	printf("Config parsing done\n");
+	btd_log(2, "Config parsing done\n");
 	btd_config_print(config, stdout);
 
 	/* Init db */
@@ -190,41 +147,41 @@ int main (int argc, char **argv)
 
 	/* Setup socket */
 	btd_log(2, "Registering socket\n");
-	socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-	if(socket_fd < 0) {
-		perror("socket");
-		die("Bye\n");
-	} 
-	btd_log(2, "Registered socket\n");
-	memset(&address, 0, sizeof(struct sockaddr_un));
 
-	address.sun_family = AF_UNIX;
-	strcpy(address.sun_path, config->socket);
+	for(struct addrinfo *r = config->socket; r != NULL; r=r->ai_next){
+		btd_log(0, "Trying to connect to: %s\n", pprint_address(r));
+		socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 
-	if(bind(socket_fd, (struct sockaddr *) &address, 
-			sizeof(struct sockaddr_un)) != 0) {
-		perror("bind");
-		die("Bye\n");
-	}
-	btd_log(2, "Bound socket\n");
-
-	if(listen(socket_fd, 5) != 0) {
-		perror("listen");
-		die("Bye\n");
-	}
-	btd_log(2, "Listening to socket\n");
-
-	btd_log(1, "Waiting for a client to connect\n");
-	fflush(stdout);
-	while((connection_fd = accept(socket_fd, (struct sockaddr *) &address,
-			&address_length)) > -1) {
-		btd_log(1, "Client connected...\n");
-		child = fork();
-		if(child == 0) {
-			return connection_handler(connection_fd);
+		if(socket_fd < 0){
+			perror("socket");
+			continue;
 		}
-		close(connection_fd);
+		btd_log(2, "Registered socket\n");
+
+		if(bind(socket_fd, r->ai_addr, r->ai_addrlen) != 0){
+			perror("bind");
+		} else {
+			btd_log(2, "Bound socket\n");
+
+			if(listen(socket_fd, 5) != 0) {
+				perror("listen");
+				die("Bye\n");
+			}
+			btd_log(2, "Listening to socket\n");
+			btd_log(1, "Waiting for a client to connect\n");
+			while((connection_fd = accept(socket_fd, 
+					r->ai_addr, &r->ai_addrlen)) > -1) {
+				btd_log(1, "Client connected...\n");
+				child = fork();
+				if(child == 0) {
+					return connection_handler(connection_fd);
+				}
+				close(connection_fd);
+			}
+			break;
+		}
+		close(socket_fd);
 	}
-	depart("Bye...\n");
+	depart("Couldn't bind any socket...\n");
 	cleanup();
 }

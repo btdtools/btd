@@ -12,13 +12,20 @@
 # All options are initialized with their defaults
 
 # Location of the socket used for communicating with the daemon
-socket = ./btd.socket
+socket = btd.socket
+#socket = ./the/path/of/this/socket/is/a/longer/than/one/hundred/and/eight/character/socket/so/this/will/throw/an/error/btd.socket
+# ipv6 is also allowed
+#socket = [::1]:1234
+# ipv4 is also allowed
+#socket = 127.0.0.1:1234
+# wildcards too, but they are buggy
+#socket = *:1234
 
 # Location of the database storing all the files
 db = ./btddb # some comment
 
 # Attached file storage
-files = ./files/files
+files = ./files
 
 # Format in which to store files.
 #

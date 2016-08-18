@@ -12,8 +12,6 @@
 #include "misc.h"
 #include "bibtex.h"
 
-#define VERSION "0.1"
-
 #define SQLITE_Q(q) SQLITE_E(q, SQLITE_OK)
 #define SQLITE_E(q, c)\
 	rc = q;\
@@ -26,7 +24,7 @@ char *sqlite_create_cfg_table =
 	"CREATE TABLE IF NOT EXISTS config"
 	"(version REAL, datecreated TEXT);"
 	"INSERT OR IGNORE INTO config (rowid, version, datecreated)" 
-	"VALUES(1," VERSION ", date('now'));";
+	"VALUES(1, '" VERSION "', date('now'));";
 char *sqlite_create_data_table =
 	"CREATE TABLE IF NOT EXISTS data"
 	"(name TEXT, author TEXT, path TEXT, datecreated TEXT, bibtex TEXT);";
@@ -61,13 +59,13 @@ static char **db_get_version()
 
 void db_convert(char *version)
 {
-	btd_log(2, "Db version: %s, current version: " VERSION "\n", version);
+	btd_log(2, "Db version: %s, current version: %s\n", version, VERSION);
 	if(strcmp(version, VERSION) == 0){
 		btd_log(2, "Db up to date\n");
 	} else {
 		die("Database version: %s\n"
-			"Program version: " VERSION "\n"
-			"There is no upgrade possible\n", version);
+			"Program version: %s\n"
+			"There is no upgrade possible\n", version, VERSION);
 	}
 }
 
@@ -114,21 +112,6 @@ void db_init(struct btd_config *cfg)
 	char **datever;
 
 	config = cfg;
-	fprintf(stdout, 
-		"BTD Config digest\n"
-		"-----------------\n"
-		"configpath: '%s'\n"
-		"\n"
-		"socket: '%s'\n"
-		"db: '%s'\n"
-		"files: '%s'\n"
-		"filefmt: '%s'\n",
-			config->configpath,
-			config->socket,
-			config->db,
-			config->files,
-			config->filefmt
-			);
 
 	btd_log(2, "Opening db at: '%s'\n", config->db);
 	SQLITE_Q(sqlite3_open(config->db, &db));
@@ -195,39 +178,32 @@ char *db_get(long long int id)
 	return l;
 }
 
-static void fd_print(int fd, char *m, unsigned int len)
-{
-	if(strlen(m) >= len){
-		write(fd, m, len-3);
-		write(fd, "...", 3);
-	} else {
-		write(fd, m, strlen(m));
-	}
-}
-
 static int db_list_cb(void *nu, int argc, char **argv, char **cname)
 {
-	int *fd = (int *)nu;
-	fd_print(*fd, argv[0], 10);
-	write(*fd, "\t", 1);
-	fd_print(*fd, argv[1], 10);
-	write(*fd, "\t", 1);
-	fd_print(*fd, argv[2], 10);
-	write(*fd, "\t", 1);
-	fd_print(*fd, argv[3], 10);
-	write(*fd, "\t", 1);
-	fd_print(*fd, argv[4], 20);
-	write(*fd, "\t", 1);
-	fd_print(*fd, argv[5], 20);
-	write(*fd, "\n", 1);
+	FILE *fd = (FILE *)nu;
+	/* Cut off entries longer than 10 chars */
+	for(int i = 0; i<4; i++){
+		if(strlen(argv[i]) > 10){
+			strcpy(argv[i]+strlen(argv[i])-4, "...");
+		}
+	}
+	/* Cut off entries longer than 20 chars */
+	for(int i = 4; i<6; i++){
+		if(strlen(argv[i]) > 20){
+			strcpy(argv[i]+strlen(argv[i])-4, "...");
+		}
+	}
+
+	fprintf(fd, "%s\t%s\t%s\t%s\t%s\t%s\n",
+		argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 	return 0;
 	(void)argc;
 	(void)cname;
 }
 
-void db_list(int fd)
+void db_list(FILE *fd)
 {
-	fd_print(fd, "id\tname\tauthor\tpath\tdate\tbibtex\n", 99);
+	fputs("id\tname\tauthor\tpath\tdate\tbibtex\n", fd);
 	SQLITE_Q(sqlite3_exec(db, 
 		"SELECT rowid, name, author, path, datecreated, bibtex FROM data",
 			db_list_cb, &fd, &sqlite_currerr));

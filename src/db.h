@@ -16,7 +16,7 @@ int db_num();
 char *db_get(long long int id);
 
 /* Print a list of bibtex snippets */
-void *db_list(int fd);
+void *db_list(FILE *fd);
 
 /* Close and commit database and filesystem */
 void db_close();

@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <unistd.h>
 
 #include "config.h"
@@ -113,6 +117,33 @@ static char *get_config_path(char *cp) {
 	return NULL;
 }
 
+static void create_unixsocket(struct btd_config *config, char *path)
+{
+	if(strlen(path) > 108){
+		btd_log(0, "Path is too long(%lu), UNIX socket can be 108 max\n",
+			strlen(path));
+		die("Socket creation failed\n");
+	}
+	char *sa = resolve_tilde(path);
+
+	config->socket = (struct addrinfo *)malloc(sizeof(struct addrinfo));
+    memset(config->socket, 0, sizeof(struct addrinfo));
+	config->socket->ai_family = AF_UNIX;
+	config->socket->ai_socktype = SOCK_STREAM;
+	config->socket->ai_protocol = 0;
+
+	/* Build address object */
+	config->socket->ai_addr = malloc(sizeof(struct sockaddr_un));
+	memset(config->socket->ai_addr, 0, sizeof(struct sockaddr_un));
+	config->socket->ai_addr->sa_family = AF_UNIX;
+	strcpy(config->socket->ai_addr->sa_data, sa);
+
+	/* Register length */
+	config->socket->ai_addrlen = sizeof(struct sockaddr_un);
+
+	free(sa);
+}
+
 void update_config(struct btd_config *config, char *key, char *value){
 	key = rtrim(ltrim(key));
 
@@ -135,7 +166,49 @@ void update_config(struct btd_config *config, char *key, char *value){
 
 	/* Configuration options */
 	if (strcmp(key, "socket") == 0){
-		config->socket = resolve_tilde(value);
+		printf("Trying to solve: '%s'\n", value);
+		int portindex = -1;
+		for(int i = strlen(value)-1; i>=0; i--){
+			if(value[i] == ':'){
+				char *end;
+				strtol(value+i+1, &end, 10);
+				if(value+i+1 != end){
+					portindex = i+1;
+					value[i] = '\0';
+					btd_log(2, "Found port spec: %s\n", value+portindex);
+					if(value[0] == '[' && value[strlen(value)-1] == ']'){
+						btd_log(2, "Stripping ipv6 square braces\n");
+						value = value+1;
+						value[strlen(value)-1] = '\0';
+					}
+					break;
+				} 
+			}
+		}
+		struct addrinfo hints;
+        struct addrinfo *result;
+		int s = 0;
+
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_family = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        hints.ai_flags = AI_PASSIVE;
+
+		btd_log(2, "Address without port: %s\n", value);
+		if(portindex == -1){
+			btd_log(2, "no port found so treating it as a unix socket\n");
+			create_unixsocket(config, value);
+		} else {
+			if((s = getaddrinfo(value, "1000", &hints, &result)) != 0) {
+				btd_log(2, "getaddrinfo returned %s, "
+					"treating it as an unix socket\n", gai_strerror(s));
+				value[portindex-1] = ':';
+				create_unixsocket(config, value);
+			} else {
+				btd_log(2, "Succesfully parsed ipv4 or ipv6 addresses\n");
+				config->socket = result;
+			}
+		}
 	} else if (strcmp(key, "db") == 0){
 		config->db = resolve_tilde(value);
 	} else if (strcmp(key, "files") == 0){
@@ -160,7 +233,9 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 
 	config->configpath = NULL;
 
-	config->socket = safe_strdup("~/.btd/btd.socket");
+	config->socket = NULL;
+	create_unixsocket(config, "~/.btd/btd.socket");
+
 	config->db = safe_strdup("~/.btd/btd.db");
 	config->files = safe_strdup("~/.btd/files");
 	config->filefmt = safe_strdup(".pdf");
@@ -171,7 +246,6 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
 
 	config->configpath = get_config_path(config->configpath);
-	config->socket = resolve_tilde(config->socket);
 	config->db = resolve_tilde(config->db);
 	config->files = resolve_tilde(config->files);
 
@@ -201,18 +275,23 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"-----------------\n"
 		"configpath: '%s'\n"
 		"\n"
-		"socket: '%s'\n"
 		"db: '%s'\n"
 		"files: '%s'\n"
 		"filefmt: '%s'\n"
 		"pathsep: '%s'\n"
 		"check_fields: '%s'\n",
 			config->configpath,
-			config->socket,
 			config->db,
 			config->files,
 			config->filefmt,
 			config->pathsep,
 			config->check_fields ? "true": "false"
 			);
+	fputs("sockets:\n", fp);
+	char *s;
+	for(struct addrinfo *r = config->socket; r != NULL; r=r->ai_next){
+		s = pprint_address(r);
+		fprintf(fp, "%s\n", s);
+		free(s);
+	}
 }

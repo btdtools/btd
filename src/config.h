@@ -2,13 +2,14 @@
 #define CONFIG_H
 
 #include <stdbool.h>
+#include <netdb.h>
 
 struct btd_config
 {
 	/* Deamon options */
 	char *configpath;
 	/* Configuration options */
-	char *socket;
+	struct addrinfo *socket;
 	char *db;
 	char *files;
 	char *filefmt;
