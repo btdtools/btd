@@ -73,10 +73,8 @@ static char *get_config_path(char *cp) {
 	}
 
 	xdg_config_home = resolve_tilde(xdg_config_home);
-	config_path = malloc(strlen(xdg_config_home)+strlen("/btd/config"));
-	config_path[0] = '\0';
-	strcat(config_path, xdg_config_home);
-	strcat(config_path, "/btd/config");
+	char *l[2] = {xdg_config_home, "/btd/config"};
+	config_path = safe_strcat(l, 2);
 	free(xdg_config_home);
 
 	if (path_exists(config_path)){
@@ -99,10 +97,8 @@ static char *get_config_path(char *cp) {
 	tok = strtok(buf, ":");
 	while (tok != NULL) {
 		tok = resolve_tilde(tok);
-		config_path = malloc(strlen(tok)+strlen("/btd/config"));
-		config_path[0] = '\0';
-		strcat(config_path, tok);
-		strcat(config_path, "/btd/config");
+		l[0] = tok;
+		config_path = safe_strcat(l, 2);
 		free(tok);
 		if (path_exists(config_path)) {
 			free(buf);

@@ -11,6 +11,7 @@
 
 char *ltrim(char *s);
 char *rtrim(char *s);
+char *safe_strcat(char **ab, int n);
 char *safe_strdup(const char *s);
 bool path_exists(const char *path);
 char *resolve_tilde(const char *path);

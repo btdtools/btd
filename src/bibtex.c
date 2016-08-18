@@ -1,5 +1,3 @@
-#define _GNU_SOURCE
-
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,8 +9,11 @@
 #define BUFSIZE 4048
 
 #define EXPECT(c, err) {\
-	if(c == EOF) asprintf(errmsg, "Early EOF\n"); \
-	else asprintf(errmsg, "Expected " err " but got '%c'\n", c);\
+	if(c == EOF) *errmsg = safe_strdup("Early EOF\n"); \
+	else {\
+		char *_l[5] = {"Expected ", err, " but got '", (char [2]){c, '\0'}, "'\n"};\
+		safe_strcat(_l, 5);\
+	}\
 	bibtex_free(obj);\
 	return NULL;}
 #define SKIP_WHITE(c, istream)\
@@ -176,7 +177,8 @@ struct bibtex_object *bibtex_parse(
 		buf[bufloc++] = c;
 	buf[bufloc] = '\0';
 	if((obj->type = bibtex_str_entry(buf)) == BIBTEX_ENTRY_UNKNOWN){
-		asprintf(errmsg, "Invalid bibtex entry type: '%s'\n", buf);
+		char *l[3] = {"Invalid bibtex entry type: '", buf, ",\n"};
+		*errmsg = safe_strcat(l, 3);\
 		bibtex_free(obj);
 		return NULL;
 	}
@@ -193,7 +195,7 @@ struct bibtex_object *bibtex_parse(
 	}
 	buf[bufloc] = '\0';
 	if(bufloc == 0){
-		asprintf(errmsg, "Identifier can't be empty\n");
+		*errmsg = safe_strdup("Identifier can't be empty\n");
 		bibtex_free(obj);
 		return NULL;
 	}
@@ -290,15 +292,15 @@ struct bibtex_object *bibtex_parse(
 #define REQUIRE_EITHER(s1, s2)\
 	if(bibtex_get_field_str(obj, s1) == NULL ||\
 			bibtex_get_field_str(obj, s2) == NULL){\
-		asprintf(errmsg, "%s requires either %s or %s fields\n",\
-			bibtex_entry_str(obj->type), s1, s2);\
+		char *_l[6] = {bibtex_entry_str(obj->type), " requires either ", s1, "or", s2, "\n"};\
+		*errmsg = safe_strcat(_l, 6);\
 		bibtex_free(obj);\
 		return NULL;\
 	}
 #define REQUIRE_FIELD(s)\
 	if(bibtex_get_field_str(obj, s) == NULL){\
-		asprintf(errmsg, "%s requires the %s field\n",\
-			bibtex_entry_str(obj->type), s);\
+		char *_l[4] = {bibtex_entry_str(obj->type), " requires the ", s, " field"};\
+		*errmsg = safe_strcat(_l, 4);\
 		bibtex_free(obj);\
 		return NULL;\
 	}
@@ -361,15 +363,19 @@ struct bibtex_object *bibtex_parse(
 
 char *bibtex_print(struct bibtex_object *obj){
 	char *old = NULL, *new;
-	asprintf(&new, "@%s{%s ", bibtex_entry_str(obj->type), obj->identifier);
+
+	char *l[5] = {"@", bibtex_entry_str(obj->type), "{", obj->identifier, " "};
+	new = safe_strcat(l, 5);
 	for(struct bibtex_entry *hd = obj->head; hd != NULL; hd = hd->next){
 		old = new;
-		asprintf(&new, "%s,%s=%s", old,
-				bibtex_field_str(hd->field, hd->key), hd->value);
+		char *k[5] = {old, ",", bibtex_field_str(hd->field, hd->key), "=", hd->value};
+		new = safe_strcat(k, 5);
 		free(old);
 	}
 	old = new;
-	asprintf(&new, "%s}", old);
+	l[0] = old;
+	l[1] = "}";
+	new = safe_strcat(l, 2);
 	free(old);
 	return new;
 }

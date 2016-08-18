@@ -35,6 +35,19 @@ char *safe_strdup(const char *s)
 	return r;
 }
 
+char *safe_strcat(char **ab, int n)
+{
+	unsigned long int len = 0;
+	for(int i = 0; i<n; i++){
+		len += strlen(ab[i]);
+	}
+	char *r = malloc(len+1);
+	if(r == NULL){
+		die("malloc() failed");
+	}
+	return r;
+}
+
 bool path_exists(const char *path)
 {
 	struct stat buf;
