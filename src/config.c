@@ -219,8 +219,6 @@ void update_config(struct btd_config *config, char *key, char *value){
 		config->datadir = resolve_tilde(value);
 	} else if (strcmp(key, "filefmt") == 0){
 		config->filefmt = resolve_tilde(value);
-	} else if (strcmp(key, "pathsep") == 0){
-		config->pathsep = safe_strdup(value);
 	} else if (strcmp(key, "pidfile") == 0){
 		config->pidfile = safe_strdup(value);
 	} else if (strcmp(key, "check_fields") == 0){
@@ -243,7 +241,6 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 
 	config->filefmt = safe_strdup(".pdf");
 	config->check_fields = safe_strdup("false");
-	config->pathsep = safe_strdup("/");
 	config->pidfile = safe_strdup("");
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
@@ -289,14 +286,12 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"datadir: '%s'\n"
 		"database:'%s'\n"
 		"filefmt: '%s'\n"
-		"pathsep: '%s'\n"
 		"pidfile: '%s'\n"
 		"check_fields: '%s'\n",
 			config->configpath,
 			config->datadir,
 			config->db,
 			config->filefmt,
-			config->pathsep,
 			config->pidfile,
 			config->check_fields ? "true": "false"
 			);

@@ -13,7 +13,6 @@ struct btd_config
 	char *datadir;
 	char *db;
 	char *filefmt;
-	char *pathsep;
 	char *pidfile;
 	bool check_fields;
 };
