@@ -213,6 +213,8 @@ void update_config(struct btd_config *config, char *key, char *value){
 		config->filefmt = resolve_tilde(value);
 	} else if (strcmp(key, "pathsep") == 0){
 		config->pathsep = safe_strdup(value);
+	} else if (strcmp(key, "pidfile") == 0){
+		config->pidfile = safe_strdup(value);
 	} else if (strcmp(key, "check_fields") == 0){
 		if(strcmp(value, "true") != 0 && strcmp(value, "false") != 0){
 			die("check_fields can either be 'true' or 'false'\n");
@@ -237,6 +239,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	config->filefmt = safe_strdup(".pdf");
 	config->check_fields = safe_strdup("false");
 	config->pathsep = safe_strdup("/");
+	config->pidfile = safe_strdup("");
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
 	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
@@ -244,10 +247,11 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	config->configpath = get_config_path(config->configpath);
 	config->db = resolve_tilde(config->db);
 	config->files = resolve_tilde(config->files);
+	config->pidfile = resolve_tilde(config->pidfile);
 
 
 	btd_log(2, "Opening config at '%s'\n", config->configpath);
-	fp = fopen(config->configpath, "r");
+	fp = safe_fopen(config->configpath, "r");
 
 	while (getline(&line, &len, fp) != -1) {
 		sep = strcspn(line, "=");
@@ -262,7 +266,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	}
 	btd_log(2, "Done parsing\n");
 
-	fclose(fp);
+	safe_fclose(fp);
 }
 
 void btd_config_print(struct btd_config *config, FILE *fp){
@@ -275,12 +279,14 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"files: '%s'\n"
 		"filefmt: '%s'\n"
 		"pathsep: '%s'\n"
+		"pidfile: '%s'\n"
 		"check_fields: '%s'\n",
 			config->configpath,
 			config->db,
 			config->files,
 			config->filefmt,
 			config->pathsep,
+			config->pidfile,
 			config->check_fields ? "true": "false"
 			);
 	fputs("sockets:\n", fp);

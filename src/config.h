@@ -14,6 +14,7 @@ struct btd_config
 	char *files;
 	char *filefmt;
 	char *pathsep;
+	char *pidfile;
 	bool check_fields;
 };
 

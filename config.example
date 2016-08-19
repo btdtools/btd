@@ -11,18 +11,22 @@
 # Comments start with a # and can be inline
 # All options are initialized with their defaults
 
-# Location of the socket used for communicating with the daemon
-#socket = btd.socket
-#socket = ./the/path/of/this/socket/is/a/longer/than/one/hundred/and/eight/character/socket/so/this/will/throw/an/error/btd.socket
-# ipv6 is also allowed
-#socket = [::1]:1234
-# ipv4 is also allowed
-socket = 127.0.0.1:1234
-# wildcards too, but they are buggy
-#socket = *:1234
+# Location or address of the socket used for communicating with the daemon
+#
+# Possible types     | example                           | notes
+# Unix domain socket | ~/.btd/btd.socket                 | ~ is expanded
+#                    | ./btd.socket                      | may be relative
+# TCP ipv4           | 192.168.0.1:12345                 |
+#                    | *:1000                            | accept all ip's
+# TCP ipv6           | [fe80::be5f:f4ff:fe1c:e60]:12345  |
+#                    | [::1]:1234                        | localhost 
+socket = ./btd.socket
 
 # Location of the database storing all the files
 db = ./btddb # some comment
+
+# When not defined no pidfile is written
+pidfile = ./btd.pid
 
 # Attached file storage
 files = ./files

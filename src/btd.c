@@ -60,6 +60,10 @@ int connection_handler(int fd)
 {
 	char *cmd = NULL;
 	FILE *stream = fdopen(fd, "r+");
+	if(stream == NULL){
+		perror("fdopen");
+		die("fdopen() failed\n");
+	}
 	fprintf(stream, "btd %s\n", VERSION);
 
 	while(true) {
@@ -114,17 +118,14 @@ int connection_handler(int fd)
 		}
 	}
 	btd_log(1, "Closing client...\n");
-	if(fclose(stream) != 0) {
-		perror("fclose");
-		return 1;
-	}
+	safe_fclose(stream);
 	return 0;
 }
 
 int main (int argc, char **argv)
 {
 	int connection_fd;
-	pid_t child;
+	pid_t child, me = getpid();
 
 	btd_init_log();
 
@@ -142,12 +143,18 @@ int main (int argc, char **argv)
 	btd_log(2, "Config parsing done\n");
 	btd_config_print(config, stdout);
 
+	if(strlen(config->pidfile) > 0){
+		btd_log(2, "Writing pidfile at %s\n", config->pidfile);
+		FILE *pidfile = safe_fopen(config->pidfile, "w");
+		fprintf(pidfile, "%d", me);
+		safe_fclose(pidfile);
+	}
+
 	/* Init db */
 	db_init(config);
 
 	/* Setup socket */
 	btd_log(2, "Registering socket\n");
-
 	for(struct addrinfo *r = config->socket; r != NULL; r=r->ai_next){
 		btd_log(0, "Trying to connect to: %s\n", pprint_address(r));
 		socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);

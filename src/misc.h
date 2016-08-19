@@ -10,6 +10,8 @@
 #define VERSION "0.1"
 
 void *safe_malloc(unsigned long int s);
+FILE *safe_fopen(char *p, char *mode);
+void safe_fclose(FILE *f);
 char *ltrim(char *s);
 char *rtrim(char *s);
 char *safe_strcat(char **ab, int n);

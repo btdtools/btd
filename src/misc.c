@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
+
 #include "misc.h"
 
 void *safe_malloc(unsigned long int s)
@@ -15,6 +16,24 @@ void *safe_malloc(unsigned long int s)
 		die("malloc() failed");
 	}
 	return r;
+}
+
+FILE *safe_fopen(char *p, char *mode)
+{
+	FILE *f = fopen(p, mode);
+	if(f == NULL){
+		perror("fopen");
+		die("fopen() failed\n");
+	}
+	return f;
+}
+
+void safe_fclose(FILE *f)
+{
+	if(fclose(f) != 0){
+		perror("fclose");
+		die("fclose() failed\n");
+	}
 }
 
 char *ltrim(char *s)
