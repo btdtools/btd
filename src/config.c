@@ -58,13 +58,23 @@ static struct argp argp = {
 	.help_filter=NULL,
 	.argp_domain=NULL};
 
-static char *get_config_path(char *cp) {
-	if (cp != NULL){
-		if (path_exists(cp)){
-			return cp;
-		}
-		die("Configuration file at %s doesn't exist\n", cp);
+static char *get_datadir()
+{
+	char *xdg_data_home, *data_path;
+
+	if ((xdg_data_home = getenv("XDG_DATA_HOME")) == NULL){
+		xdg_data_home = "~/.local/share";
 	}
+	xdg_data_home = resolve_tilde(xdg_data_home);
+
+	char *l[2] = {xdg_data_home, "/btd"};
+	data_path = safe_strcat(l, 2);
+	free(xdg_data_home);
+	return data_path;
+}
+
+static char *get_config_path()
+{
 	char *xdg_config_home, *xdg_config_dirs, *config_path, *buf, *tok;
 
 	// 2: check for $XDG_CONFIG_HOME/btd/config
@@ -205,10 +215,8 @@ void update_config(struct btd_config *config, char *key, char *value){
 				config->socket = result;
 			}
 		}
-	} else if (strcmp(key, "db") == 0){
-		config->db = resolve_tilde(value);
-	} else if (strcmp(key, "files") == 0){
-		config->files = resolve_tilde(value);
+	} else if (strcmp(key, "datadir") == 0){
+		config->datadir = resolve_tilde(value);
 	} else if (strcmp(key, "filefmt") == 0){
 		config->filefmt = resolve_tilde(value);
 	} else if (strcmp(key, "pathsep") == 0){
@@ -234,8 +242,6 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	config->socket = NULL;
 	create_unixsocket(config, "~/.btd/btd.socket");
 
-	config->db = safe_strdup("~/.btd/btd.db");
-	config->files = safe_strdup("~/.btd/files");
 	config->filefmt = safe_strdup(".pdf");
 	config->check_fields = safe_strdup("false");
 	config->pathsep = safe_strdup("/");
@@ -244,11 +250,11 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	argp_parse(&argp, argc, argv, 0, 0, config);
 	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
 
-	config->configpath = get_config_path(config->configpath);
-	config->db = resolve_tilde(config->db);
-	config->files = resolve_tilde(config->files);
+	if(config->configpath == NULL){
+		config->configpath = get_config_path(config->configpath);
+	}
+	config->datadir = get_datadir();
 	config->pidfile = resolve_tilde(config->pidfile);
-
 
 	btd_log(2, "Opening config at '%s'\n", config->configpath);
 	fp = safe_fopen(config->configpath, "r");
@@ -265,6 +271,8 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 		line = NULL;
 	}
 	btd_log(2, "Done parsing\n");
+	char *l[2] = {config->datadir, "/db.sqlite"};
+	config->db = safe_strcat(l, 2);
 
 	safe_fclose(fp);
 }
@@ -275,15 +283,13 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"-----------------\n"
 		"configpath: '%s'\n"
 		"\n"
-		"db: '%s'\n"
-		"files: '%s'\n"
+		"datadir: '%s'\n"
 		"filefmt: '%s'\n"
 		"pathsep: '%s'\n"
 		"pidfile: '%s'\n"
 		"check_fields: '%s'\n",
 			config->configpath,
-			config->db,
-			config->files,
+			config->datadir,
 			config->filefmt,
 			config->pathsep,
 			config->pidfile,

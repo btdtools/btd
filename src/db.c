@@ -130,12 +130,12 @@ void db_init(struct btd_config *cfg)
 	free(datever[1]);
 	free(datever);
 
-	if(!path_exists(config->files)){
-		btd_log(2, "Creating filesystem at: '%s'\n", config->files);
-		if(mkdir(config->files, 0777) == -1){
+	if(!path_exists(config->datadir)){
+		btd_log(2, "Creating filesystem at: '%s'\n", config->datadir);
+		if(mkdir(config->datadir, 0777) == -1){
 			perror("mkdir");
 			die("If the directory didn't exist you can create it by running:\n"
-				"$ mkdir -p '%s'\n", config->files);
+				"$ mkdir -p '%s'\n", config->datadir);
 		}
 	}
 	btd_log(2, "Filesystem initialized\n");

@@ -10,8 +10,8 @@ struct btd_config
 	char *configpath;
 	/* Configuration options */
 	struct addrinfo *socket;
+	char *datadir;
 	char *db;
-	char *files;
 	char *filefmt;
 	char *pathsep;
 	char *pidfile;
