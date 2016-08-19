@@ -107,11 +107,41 @@ int db_add_bibtex(struct bibtex_object *obj, char *path)
 	}
 }
 
+static void create_folder(char *p)
+{
+	if(!path_exists(p)){
+		btd_log(1, "%s doesn't exist, creating\n", p);
+		if(mkdir(p, 0777) != 0){
+			perror("mkdir");
+			die("mkdir()\n");
+		}
+	}
+}
+
+static void create_folder_rec(char *p)
+{
+	char t;
+	for(unsigned long int i = 0; i<strlen(p); i++){
+		if(p[i] == '/'){
+			t = p[i+1];
+			p[i+1] = '\0';
+			create_folder(p);
+			p[i+1] = t;
+		}
+	}
+	create_folder(p);
+}
+
 void db_init(struct btd_config *cfg)
 {
 	char **datever;
 
 	config = cfg;
+
+	btd_log(2, "Creating filesystem at: '%s'\n", config->datadir);
+	create_folder_rec(config->datadir);
+
+	btd_log(2, "Filesystem initialized\n");
 
 	btd_log(2, "Opening db at: '%s'\n", config->db);
 	SQLITE_Q(sqlite3_open(config->db, &db));
@@ -129,16 +159,6 @@ void db_init(struct btd_config *cfg)
 	free(datever[0]);
 	free(datever[1]);
 	free(datever);
-
-	if(!path_exists(config->datadir)){
-		btd_log(2, "Creating filesystem at: '%s'\n", config->datadir);
-		if(mkdir(config->datadir, 0777) == -1){
-			perror("mkdir");
-			die("If the directory didn't exist you can create it by running:\n"
-				"$ mkdir -p '%s'\n", config->datadir);
-		}
-	}
-	btd_log(2, "Filesystem initialized\n");
 }
 
 static int db_num_cb(void *nu, int argc, char **argv, char **cname)
@@ -167,10 +187,7 @@ char *db_get(long long int id)
 	SQLITE_Q(sqlite3_bind_int(stmt, 1, id));
 
 	rc = sqlite3_step(stmt);
-	printf("hoi\n");
-	printf("rc: %d\n", rc);
 	if(rc == SQLITE_ROW){
-		printf("%d\n", sqlite3_column_count(stmt));
 		l = safe_strdup((char *)sqlite3_column_text(stmt, 0));
 	}
 

@@ -240,7 +240,6 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	config->configpath = NULL;
 
 	config->socket = NULL;
-	create_unixsocket(config, "~/.btd/btd.socket");
 
 	config->filefmt = safe_strdup(".pdf");
 	config->check_fields = safe_strdup("false");
@@ -254,6 +253,10 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 		config->configpath = get_config_path(config->configpath);
 	}
 	config->datadir = get_datadir();
+	char *l[2] = {config->datadir, "/btd.socket"};
+	key = safe_strcat(l, 2);
+	create_unixsocket(config, key);
+	free(key);
 	config->pidfile = resolve_tilde(config->pidfile);
 
 	btd_log(2, "Opening config at '%s'\n", config->configpath);
@@ -271,7 +274,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 		line = NULL;
 	}
 	btd_log(2, "Done parsing\n");
-	char *l[2] = {config->datadir, "/db.sqlite"};
+	l[1] = "/db.sqlite";
 	config->db = safe_strcat(l, 2);
 
 	safe_fclose(fp);
@@ -284,12 +287,14 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		"configpath: '%s'\n"
 		"\n"
 		"datadir: '%s'\n"
+		"database:'%s'\n"
 		"filefmt: '%s'\n"
 		"pathsep: '%s'\n"
 		"pidfile: '%s'\n"
 		"check_fields: '%s'\n",
 			config->configpath,
 			config->datadir,
+			config->db,
 			config->filefmt,
 			config->pathsep,
 			config->pidfile,

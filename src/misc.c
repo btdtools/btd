@@ -69,7 +69,12 @@ char *safe_strcat(char **ab, int n)
 	for(int i = 0; i<n; i++){
 		len += strlen(ab[i]);
 	}
-	return safe_malloc(len+1);
+	char *r = safe_malloc(len+1);
+	r[0] = '\0';
+	for(int i = 0; i<n; i++){
+		strcat(r, ab[i]);
+	}
+	return r;
 }
 
 bool path_exists(const char *path)
