@@ -2,6 +2,7 @@
 #define MISC_H
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <netdb.h>
 
 #define die(fmt, as...) printf(fmt, ## as); exit(EXIT_FAILURE);

@@ -13,6 +13,7 @@
 #include "config.h"
 #include "log.h"
 #include "misc.h"
+#include "xdg.h"
 
 const char *argp_program_version = "btd 0.1";
 const char *argp_program_bug_address = "<mart@martlubbers.net>";
@@ -57,71 +58,6 @@ static struct argp argp = {
 	.children=NULL,
 	.help_filter=NULL,
 	.argp_domain=NULL};
-
-static char *get_datadir()
-{
-	char *xdg_data_home, *data_path;
-
-	if ((xdg_data_home = getenv("XDG_DATA_HOME")) == NULL){
-		xdg_data_home = "~/.local/share";
-	}
-	xdg_data_home = resolve_tilde(xdg_data_home);
-
-	char *l[2] = {xdg_data_home, "/btd"};
-	data_path = safe_strcat(l, 2);
-	free(xdg_data_home);
-	return data_path;
-}
-
-static char *get_config_path()
-{
-	char *xdg_config_home, *xdg_config_dirs, *config_path, *buf, *tok;
-
-	// 2: check for $XDG_CONFIG_HOME/btd/config
-	if ((xdg_config_home = getenv("XDG_CONFIG_HOME")) == NULL){
-		xdg_config_home = "~/.config";
-	}
-
-	xdg_config_home = resolve_tilde(xdg_config_home);
-	char *l[2] = {xdg_config_home, "/btd/config"};
-	config_path = safe_strcat(l, 2);
-	free(xdg_config_home);
-
-	if (path_exists(config_path)){
-		return config_path;
-	}
-	free(config_path);
-
-	/* 3: Check /etc/btd.conf */
-	config_path = "/etc/btd.conf";
-	if (path_exists(config_path)){
-		return safe_strdup(config_path);
-	}
-
-	/* 4: Check $XDG_CONFIG_DIRS/btd/config */
-	if ((xdg_config_dirs = getenv("XDG_CONFIG_DIRS")) == NULL){
-		xdg_config_dirs = "/etc/xdg";
-	}
-
-	buf = safe_strdup(xdg_config_dirs);
-	tok = strtok(buf, ":");
-	while (tok != NULL) {
-		tok = resolve_tilde(tok);
-		l[0] = tok;
-		config_path = safe_strcat(l, 2);
-		free(tok);
-		if (path_exists(config_path)) {
-			free(buf);
-			return config_path;
-		}
-		free(config_path);
-		tok = strtok(NULL, ":");
-	}
-	free(buf);
-
-	die("Unable to find the configuration file\n");
-	return NULL;
-}
 
 static void create_unixsocket(struct btd_config *config, char *path)
 {
@@ -247,9 +183,9 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
 
 	if(config->configpath == NULL){
-		config->configpath = get_config_path(config->configpath);
+		config->configpath = get_config_path();
 	}
-	config->datadir = get_datadir();
+	config->datadir = get_data_path();
 	char *l[2] = {config->datadir, "/btd.socket"};
 	key = safe_strcat(l, 2);
 	create_unixsocket(config, key);
