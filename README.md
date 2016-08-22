@@ -19,15 +19,15 @@ As of now there is no installation method, this will be included as a
 Almost all configuration is done via the config file. The program looks for a
 config file in `$XDG_CONFIG_HOME/btd/config` and in all the components of
 `$XDG_CONFIG_DIRS/btd/config`. The config can also be manually specified by
-using the `-c FILE` command line directive.
+using the command line argument.
 
 An example configuration file with all the values is included as
 `config.example`.
 
 #### Data storage
-The program stores an `sqlite` database containing the metadata and an optional
-file system storing the attached documents in a directory. The program checks
-whether the directory `$XDG_DATA_HOME/btd` or one of the components of
+The program stores an [sqlite][sqlite] database containing the metadata and an
+optional file system storing the attached documents in a directory. The program
+checks whether the directory `$XDG_DATA_HOME/btd` or one of the components of
 `$XDG_DATA_DIRS/btd` exists and will store the data in the corresponding match.
 When no data directory exists `btd` will store the data in
 `$XDG_DATA_HOME/btd`.
