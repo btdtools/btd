@@ -12,8 +12,8 @@ of [sqlite][sqlite]. On debian (derivatives) you can just install
 
 To create manpage can run `make man` after installing `help2man`.
 
-As of now there is no installation method, this will be included as a 
-`make install` directive
+Installation can be done by running `# make install`. You can change the
+installation location by changing the `PREFIX` variable in the `Makefile`.
 
 #### Configuration
 Almost all configuration is done via the config file. The program looks for a
