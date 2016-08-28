@@ -14,7 +14,6 @@ void die(char *msg, ...)
 {
 	va_list ap;
 	va_start(ap, msg);
-	fprintf(stderr, "%s (%d): ", __FILE__, __LINE__);
    	fprintf(stderr, msg, ap);
 	va_end(ap);
 	exit(EXIT_FAILURE);
@@ -46,24 +45,6 @@ void safe_fclose(FILE *f)
 		perror("fclose");
 		die("fclose() failed\n");
 	}
-}
-
-char *ltrim(char *s)
-{
-	while(isspace(*s)){
-		s++;
-	}
-	return s;
-}
-
-char *rtrim(char *s)
-{
-	char *end = s + strlen(s);
-	while((end != s) && isspace(*(end-1))){
-		end--;
-	}
-	*end = '\0';
-	return s;
 }
 
 char *safe_strdup(const char *s)
@@ -119,43 +100,6 @@ char *resolve_tilde(const char *path) {
 	globfree(&globbuf);
 
 	return result;
-}
-
-char *parse_str(FILE *stream)
-{
-	skip_white(stream);
-	int size = 32;
-	char *buf = safe_malloc(size);
-	int position = 0;
-	char c;
-
-	while(!isspace(c = fgetc(stream)) && c != EOF){
-		if(c == '\\'){
-			c = fgetc(stream);
-		}
-		buf[position++] = c;
-		if(position >= size-1){
-			if((buf = realloc(buf, size *= 2)) == NULL){
-				perror("realloc");
-				die("Realloc failed...\n");
-			}
-		}
-	}
-	if(c == EOF){
-		free(buf);
-		return NULL;
-	}
-	buf[position] = '\0';
-	return buf;
-}
-
-void skip_white(FILE *stream)
-{
-	char c;
-	while(isspace(c = fgetc(stream)) && c != EOF);
-	if(c != EOF){
-		ungetc(c, stream);
-	}
 }
 
 char *pprint_address(struct addrinfo *ai)

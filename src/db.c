@@ -224,6 +224,17 @@ void db_list(FILE *fd)
 			db_list_cb, &fd, &sqlite_currerr));
 }
 
+void db_attach(char *fn, long long int id, long long int length, FILE *fd)
+{
+	char *bt = db_get(id);
+	if(bt == NULL){
+		fprintf(fd, "1\nNot a valid id\n");
+	} else {
+		free(bt);
+		fprintf(fd, "0\nAttaching to %lld with name %s bytes %lld\n", id, fn, length);
+	}
+}
+
 void db_close()
 {
 	sqlite3_close(db);

@@ -13,6 +13,7 @@
 #include "config.h"
 #include "log.h"
 #include "misc.h"
+#include "parse.h"
 #include "xdg.h"
 
 const char *argp_program_version = "btd 0.1";

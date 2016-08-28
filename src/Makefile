@@ -1,5 +1,5 @@
 PROGRAM:=btd
-OBJS:=config.o misc.o db.o bibtex.o xdg.o
+OBJS:=config.o misc.o db.o bibtex.o xdg.o parse.o
 
 CFLAGS:=-g -O3 -Wextra -Wall -Werror -pedantic
 LDLIBS:=-lsqlite3

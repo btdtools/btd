@@ -10,6 +10,7 @@
 #include <sqlite3.h>
 
 #include "config.h"
+#include "parse.h"
 #include "misc.h"
 #include "log.h"
 #include "db.h"
@@ -23,12 +24,13 @@ char *PROCOTOLUSAGE =\
 	"Commands are case insensitive and space has to be escaped with\\\n"\
 	""\
 	"Command Args         Info\n"\
+	"ATTACH  NAME ID LEN  Attach a file with name NAME to ID with LEN bytes.\n"\
 	"BYE                  Close the connection gracefully.\n"\
 	"NUM                  Print the number of entries available.\n"\
 	"SHOW    ID           Show the snippet matching ID.\n"\
 	"LIST                 Print a summary.\n"\
 	"HELP                 Display this help.\n"\
-	"BIBTEX  PATH SNIPPET Add a bibtex snippet to the database in\n"\
+	"BIBTEX  DIR  SNIPPET Add a bibtex snippet to the database in\n"\
 	"                     directory DIR and use SNIPPET as the data.\n"\
 	"";
 
@@ -92,20 +94,26 @@ int connection_handler(int fd)
 		} else if(strcasecmp("num", cmd) == 0){
 			fprintf(stream, "0\n%d\n", db_num());
 		} else if(strcasecmp("show", cmd) == 0){
-			char *num_str = parse_str(stream);
-			long long int num = strtoll(num_str, NULL, 10);
-			if(num <= 0){
-				fputs("1\nNumber should be positive\n", stream);
-			} else {
-				char *bibtex_str = db_get(num);
-				if(bibtex_str == NULL){
-					fputs("1\nNumber not a valid ID\n", stream);
+			long long int num;
+			if(parse_llint(stream, &num)){
+				if(num <= 0){
+					fputs("1\nNumber should be positive\n", stream);
 				} else {
-					fprintf(stream, "0\n%s\n", bibtex_str);
-					free(bibtex_str);
+					char *bibtex_str = db_get(num);
+					if(bibtex_str == NULL){
+						fputs("1\nNumber not a valid ID\n", stream);
+					} else {
+						fprintf(stream, "0\n%s\n", bibtex_str);
+						free(bibtex_str);
+					}
 				}
 			}
-			free(num_str);
+		} else if(strcasecmp("attach", cmd) == 0){
+			char *fn = parse_str(stream);
+			long long int num, length;
+			if(parse_llint(stream, &num) && parse_llint(stream, &length)){
+				db_attach(fn, num, length, stream);
+			}
 		} else if(strcasecmp("list", cmd) == 0){
 			fputs("0\n", stream);
 			db_list(stream);
