@@ -187,8 +187,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 		config->configpath = get_config_path();
 	}
 	config->datadir = get_data_path();
-	char *l[2] = {config->datadir, "/btd.socket"};
-	key = safe_strcat(l, 2);
+	key = safe_strcat(2, config->datadir, "/btd.socket");
 	create_unixsocket(config, key);
 	free(key);
 	config->pidfile = resolve_tilde(config->pidfile);
@@ -208,14 +207,13 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 		line = NULL;
 	}
 	btd_log(2, "Done parsing\n");
-	l[1] = "/db.sqlite";
-	config->db = safe_strcat(l, 2);
+	config->db = safe_strcat(2, config->datadir, "/db.sqlite");
 
 	safe_fclose(fp);
 }
 
 void btd_config_print(struct btd_config *config, FILE *fp){
-	fprintf(fp, 
+	safe_fprintf(fp, 
 		"BTD Config digest\n"
 		"-----------------\n"
 		"configpath: '%s'\n"
@@ -232,11 +230,11 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 			config->pidfile,
 			config->check_fields ? "true": "false"
 			);
-	fputs("sockets:\n", fp);
+	safe_fputs(fp, "sockets:\n");
 	char *s;
 	for(struct addrinfo *r = config->socket; r != NULL; r=r->ai_next){
 		s = pprint_address(r);
-		fprintf(fp, "%s\n", s);
+		safe_fprintf(fp, "%s\n", s);
 		free(s);
 	}
 }

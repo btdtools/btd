@@ -6,8 +6,7 @@
 
 static char *get_file(char *home, char *file)
 {
-	char *l[3] = {home, "/", file};
-	char *path = safe_strcat(l, 3);
+	char *path = safe_strcat(3, home, "/", file);
 	char *resolved_path = resolve_tilde(path);
 	free(path);
 	return resolved_path;

@@ -209,7 +209,7 @@ static int db_list_cb(void *nu, int argc, char **argv, char **cname)
 		}
 	}
 
-	fprintf(fd, "%s\t%s\t%s\t%s\t%s\t%s\n",
+	safe_fprintf(fd, "%s\t%s\t%s\t%s\t%s\t%s\n",
 		argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
 	return 0;
 	(void)argc;
@@ -218,7 +218,7 @@ static int db_list_cb(void *nu, int argc, char **argv, char **cname)
 
 void db_list(FILE *fd)
 {
-	fputs("id\tname\tauthor\tpath\tdate\tbibtex\n", fd);
+	safe_fputs(fd, "id\tname\tauthor\tpath\tdate\tbibtex\n");
 	SQLITE_Q(sqlite3_exec(db, 
 		"SELECT rowid, name, author, path, datecreated, bibtex FROM data",
 			db_list_cb, &fd, &sqlite_currerr));
@@ -228,10 +228,10 @@ void db_attach(char *fn, long long int id, long long int length, FILE *fd)
 {
 	char *bt = db_get(id);
 	if(bt == NULL){
-		fprintf(fd, "1\nNot a valid id\n");
+		safe_fprintf(fd, "1\nNot a valid id\n");
 	} else {
 		free(bt);
-		fprintf(fd, "0\nAttaching to %lld with name %s bytes %lld\n", id, fn, length);
+		safe_fprintf(fd, "0\nAttaching to %lld with name %s bytes %lld\n", id, fn, length);
 	}
 }
 

@@ -11,8 +11,7 @@
 #define EXPECT(c, err) {\
 	if(c == EOF) *errmsg = safe_strdup("Early EOF\n"); \
 	else {\
-		char *_l[5] = {"Expected ", err, " but got '", (char [2]){c, '\0'}, "'\n"};\
-		safe_strcat(_l, 5);\
+		safe_strcat(5, "Expected ", err, (char [2]){c, '\0'}, "'\n");\
 	}\
 	bibtex_free(obj);\
 	return NULL;}
@@ -177,8 +176,7 @@ struct bibtex_object *bibtex_parse(
 		buf[bufloc++] = c;
 	buf[bufloc] = '\0';
 	if((obj->type = bibtex_str_entry(buf)) == BIBTEX_ENTRY_UNKNOWN){
-		char *l[3] = {"Invalid bibtex entry type: '", buf, ",\n"};
-		*errmsg = safe_strcat(l, 3);\
+		*errmsg = safe_strcat(3, "Invalid bibtex entry type: '", buf, ",\n");
 		bibtex_free(obj);
 		return NULL;
 	}
@@ -292,15 +290,13 @@ struct bibtex_object *bibtex_parse(
 #define REQUIRE_EITHER(s1, s2)\
 	if(bibtex_get_field_str(obj, s1) == NULL ||\
 			bibtex_get_field_str(obj, s2) == NULL){\
-		char *_l[6] = {bibtex_entry_str(obj->type), " requires either ", s1, "or", s2, "\n"};\
-		*errmsg = safe_strcat(_l, 6);\
+		*errmsg = safe_strcat(6, bibtex_entry_str(obj->type), " requires either ", s1, "or", s2, "\n");\
 		bibtex_free(obj);\
 		return NULL;\
 	}
 #define REQUIRE_FIELD(s)\
 	if(bibtex_get_field_str(obj, s) == NULL){\
-		char *_l[4] = {bibtex_entry_str(obj->type), " requires the ", s, " field"};\
-		*errmsg = safe_strcat(_l, 4);\
+		*errmsg = safe_strcat(4, bibtex_entry_str(obj->type), " requires the ", s, " field");\
 		bibtex_free(obj);\
 		return NULL;\
 	}
@@ -364,18 +360,14 @@ struct bibtex_object *bibtex_parse(
 char *bibtex_print(struct bibtex_object *obj){
 	char *old = NULL, *new;
 
-	char *l[5] = {"@", bibtex_entry_str(obj->type), "{", obj->identifier, " "};
-	new = safe_strcat(l, 5);
+	new = safe_strcat(5, "@", bibtex_entry_str(obj->type), "{", obj->identifier, " ");
 	for(struct bibtex_entry *hd = obj->head; hd != NULL; hd = hd->next){
 		old = new;
-		char *k[5] = {old, ",", bibtex_field_str(hd->field, hd->key), "=", hd->value};
-		new = safe_strcat(k, 5);
+		new = safe_strcat(5, old, ",", bibtex_field_str(hd->field, hd->key), "=", hd->value);
 		free(old);
 	}
 	old = new;
-	l[0] = old;
-	l[1] = "}";
-	new = safe_strcat(l, 2);
+	new = safe_strcat(2, old, "}");
 	free(old);
 	return new;
 }

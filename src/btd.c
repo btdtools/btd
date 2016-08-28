@@ -67,7 +67,7 @@ int connection_handler(int fd)
 		perror("fdopen");
 		die("fdopen() failed\n");
 	}
-	fprintf(stream, "btd %s\n", VERSION);
+	safe_fprintf(stream, "btd %s\n", VERSION);
 
 	while(true) {
 		free(cmd);
@@ -83,16 +83,16 @@ int connection_handler(int fd)
 			struct bibtex_object *obj =\
 				bibtex_parse(stream, &errmsg, config->check_fields);
 			if(obj == NULL){
-				fprintf(stream, "1\nParsing failed: %s\n", errmsg);
+				safe_fprintf(stream, "1\nParsing failed: %s\n", errmsg);
 				free(errmsg);
 			} else {
 				int id = db_add_bibtex(obj, path);
 				bibtex_free(obj);
-				fprintf(stream, "0\nAdded with id: %d\n", id);
+				safe_fprintf(stream, "0\nAdded with id: %d\n", id);
 			}
 			free(path);
 		} else if(strcasecmp("num", cmd) == 0){
-			fprintf(stream, "0\n%d\n", db_num());
+			safe_fprintf(stream, "0\n%d\n", db_num());
 		} else if(strcasecmp("show", cmd) == 0){
 			long long int num;
 			if(parse_llint(stream, &num)){
@@ -103,7 +103,7 @@ int connection_handler(int fd)
 					if(bibtex_str == NULL){
 						fputs("1\nNumber not a valid ID\n", stream);
 					} else {
-						fprintf(stream, "0\n%s\n", bibtex_str);
+						safe_fprintf(stream, "0\n%s\n", bibtex_str);
 						free(bibtex_str);
 					}
 				}
@@ -121,9 +121,9 @@ int connection_handler(int fd)
 			fputs("0\nbye\n", stream);
 			break;
 		} else if(strcasecmp("help", cmd) == 0){
-			fprintf(stream, "0\n%s\n", PROCOTOLUSAGE);
+			safe_fprintf(stream, "0\n%s\n", PROCOTOLUSAGE);
 		} else {
-			fprintf(stream, "1\nUnknown command: '%s'\n", cmd);
+			safe_fprintf(stream, "1\nUnknown command: '%s'\n", cmd);
 		}
 	}
 	btd_log(1, "Closing client...\n");
@@ -155,7 +155,7 @@ int main (int argc, char **argv)
 	if(strlen(config->pidfile) > 0){
 		btd_log(2, "Writing pidfile at %s\n", config->pidfile);
 		FILE *pidfile = safe_fopen(config->pidfile, "w");
-		fprintf(pidfile, "%d", me);
+		safe_fprintf(pidfile, "%d", me);
 		safe_fclose(pidfile);
 	}
 

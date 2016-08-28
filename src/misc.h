@@ -11,8 +11,10 @@ void die(char *msg, ...);
 void *safe_malloc(unsigned long int s);
 FILE *safe_fopen(char *p, char *mode);
 void safe_fclose(FILE *f);
-char *safe_strcat(char **ab, int n);
+char *safe_strcat(int count, ...);
 char *safe_strdup(const char *s);
+void safe_fputs(FILE *f, char *m);
+void safe_fprintf(FILE *f, char *m, ...);
 bool path_exists(const char *path);
 char *resolve_tilde(const char *path);
 

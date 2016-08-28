@@ -51,23 +51,49 @@ char *safe_strdup(const char *s)
 {
 	char *r = strdup(s);
 	if(r == NULL){
+		perror("strdup");
 		die("strup() failed");
 	}
 	return r;
 }
 
-char *safe_strcat(char **ab, int n)
+char *safe_strcat(int count, ...)
 {
+	va_list ap;
+	va_start(ap, count);
 	unsigned long int len = 0;
-	for(int i = 0; i<n; i++){
-		len += strlen(ab[i]);
+	for(int i = 0; i<count; i++){
+		len += strlen(va_arg(ap, char *));
 	}
+	va_end(ap);
+
+	va_start(ap, count);
 	char *r = safe_malloc(len+1);
 	r[0] = '\0';
-	for(int i = 0; i<n; i++){
-		strcat(r, ab[i]);
+	for(int i = 0; i<count; i++){
+		strcat(r, va_arg(ap, char *));
 	}
+	va_end(ap);
 	return r;
+}
+
+void safe_fputs(FILE *f, char *m)
+{
+	if(fputs(m, f) < 0){
+		perror("fputs");
+		die("fputs()\n");
+	}
+}
+
+void safe_fprintf(FILE *f, char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	if(vfprintf(f, fmt, ap) < 0){
+		perror("fprintf");
+		die("fprintf\n");
+	};
+	va_end(ap);
 }
 
 bool path_exists(const char *path)

@@ -57,7 +57,7 @@ bool parse_llint(FILE *stream, long long int *r)
 	printf("Trying to parse '%s' as a num\n", str);
 	*r = strtoll(str, &ref, 10);
 	if(*ref != '\0'){
-		fprintf(stream, "1\n'%s' is not a number\n", str);
+		safe_fprintf(stream, "1\n'%s' is not a number\n", str);
 		free(str);
 		return false;
 	} else {
