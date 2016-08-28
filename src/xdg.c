@@ -49,7 +49,7 @@ char *get_config_path()
 	char *systempaths = safe_getenv("XDG_CONFIG_DIRS", "/etc/xdg");
 	char *token;
 	while((token = strsep(&systempaths, ":")) != NULL){
-		btd_log(2, "Checking %s/btd/config\n", token);
+		btd_logf(2, "Checking %s/btd/config\n", token);
 		if((cf = get_file_if_exist(token, "/btd/config")) != NULL){
 			btd_log(2, "Found!\n");
 			return cf;
@@ -76,7 +76,7 @@ char *get_data_path(){
 		safe_getenv("XDG_DATA_DIRS", "/usr/local/share:/usr/share"));
 	char *token;
 	while((token = strsep(&systempaths, ":")) != NULL){
-		btd_log(2, "Checking %s/btd\n", token);
+		btd_logf(2, "Checking %s/btd\n", token);
 		if((df = get_file_if_exist(token, "/btd")) != NULL){
 			btd_log(2, "Found!\n");
 			return df;
@@ -85,6 +85,6 @@ char *get_data_path(){
 
 	/* No data found, thus going for the default */
 	df = get_file(home, "/btd");
-	btd_log(2, "No existing data found, falling back to %s\n", df);
+	btd_logf(2, "No existing data found, falling back to %s\n", df);
 	return df;
 }

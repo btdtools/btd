@@ -13,7 +13,8 @@ void *safe_malloc(unsigned long int s)
 {
 	void *r = malloc(s);
 	if(r == NULL){
-		die("malloc() failed");
+		perror("malloc");
+		die("malloc() failed\n");
 	}
 	return r;
 }

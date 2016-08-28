@@ -17,7 +17,7 @@
 	rc = q;\
 	if(rc != c){\
 		printf("SQLite error: %s\n", sqlite3_errmsg(db)); \
-		die("SQLite error: %d-%s\n", rc, sqlite_currerr);\
+		dief("SQLite error: %d-%s\n", rc, sqlite_currerr);\
 	}\
 
 char *sqlite_create_cfg_table =
@@ -59,11 +59,11 @@ static char **db_get_version()
 
 void db_convert(char *version)
 {
-	btd_log(2, "Db version: %s, current version: %s\n", version, VERSION);
+	btd_logf(2, "Db version: %s, current version: %s\n", version, VERSION);
 	if(strcmp(version, VERSION) == 0){
 		btd_log(2, "Db up to date\n");
 	} else {
-		die("Database version: %s\n"
+		dief("Database version: %s\n"
 			"Program version: %s\n"
 			"There is no upgrade possible\n", version, VERSION);
 	}
@@ -74,7 +74,7 @@ int db_add_bibtex(struct bibtex_object *obj, char *path)
 	sqlite3_int64 rowid = sqlite3_last_insert_rowid(db);
 	char *print = bibtex_print(obj);
 
-	btd_log(2, "Adding bibtex entry: '%s'\n", print);
+	btd_logf(2, "Adding bibtex entry: '%s'\n", print);
 	SQLITE_Q(sqlite3_prepare_v2(db, sqlite_add_datarow, -1,
 			&stmt, 0));
 
@@ -110,7 +110,7 @@ int db_add_bibtex(struct bibtex_object *obj, char *path)
 static void create_folder(char *p)
 {
 	if(!path_exists(p)){
-		btd_log(1, "%s doesn't exist, creating\n", p);
+		btd_logf(1, "%s doesn't exist, creating\n", p);
 		if(mkdir(p, 0777) != 0){
 			perror("mkdir");
 			die("mkdir()\n");
@@ -138,12 +138,12 @@ void db_init(struct btd_config *cfg)
 
 	config = cfg;
 
-	btd_log(2, "Creating filesystem at: '%s'\n", config->datadir);
+	btd_logf(2, "Creating filesystem at: '%s'\n", config->datadir);
 	create_folder_rec(config->datadir);
 
 	btd_log(2, "Filesystem initialized\n");
 
-	btd_log(2, "Opening db at: '%s'\n", config->db);
+	btd_logf(2, "Opening db at: '%s'\n", config->db);
 	SQLITE_Q(sqlite3_open(config->db, &db));
 
 	btd_log(2, "Grabbing and/or creating version table\n");
@@ -153,7 +153,7 @@ void db_init(struct btd_config *cfg)
 	SQLITE_Q(sqlite3_exec(db, sqlite_create_data_table, NULL, 0, &sqlite_currerr));
 
 	datever = db_get_version();
-	btd_log(1, "Opened db v%s created on %s\n", datever[0], datever[1]);
+	btd_logf(1, "Opened db v%s created on %s\n", datever[0], datever[1]);
 	db_convert(datever[0]);
 
 	free(datever[0]);

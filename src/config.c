@@ -62,7 +62,7 @@ static struct argp argp = {
 static void create_unixsocket(struct btd_config *config, char *path)
 {
 	if(strlen(path) > 108){
-		btd_log(0, "Path is too long(%lu), UNIX socket can be 108 max\n",
+		btd_logf(0, "Path is too long(%lu), UNIX socket can be 108 max\n",
 			strlen(path));
 		die("Socket creation failed\n");
 	}
@@ -117,7 +117,7 @@ void update_config(struct btd_config *config, char *key, char *value){
 				if(value+i+1 != end){
 					portindex = i+1;
 					value[i] = '\0';
-					btd_log(2, "Found port spec: %s\n", value+portindex);
+					btd_logf(2, "Found port spec: %s\n", value+portindex);
 					if(value[0] == '[' && value[strlen(value)-1] == ']'){
 						btd_log(2, "Stripping ipv6 square braces\n");
 						value = value+1;
@@ -136,13 +136,13 @@ void update_config(struct btd_config *config, char *key, char *value){
         hints.ai_socktype = SOCK_STREAM;
         hints.ai_flags = AI_PASSIVE;
 
-		btd_log(2, "Address without port: %s\n", value);
+		btd_logf(2, "Address without port: %s\n", value);
 		if(portindex == -1){
 			btd_log(2, "no port found so treating it as a unix socket\n");
 			create_unixsocket(config, value);
 		} else {
 			if((s = getaddrinfo(value, value+portindex, &hints, &result)) != 0) {
-				btd_log(2, "getaddrinfo returned %s, "
+				btd_logf(2, "getaddrinfo returned %s, "
 					"treating it as an unix socket\n", gai_strerror(s));
 				value[portindex-1] = ':';
 				create_unixsocket(config, value);
@@ -180,7 +180,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	config->pidfile = safe_strdup("");
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
-	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
+	btd_logf(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
 
 	if(config->configpath == NULL){
 		config->configpath = get_config_path();
@@ -192,7 +192,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	free(key);
 	config->pidfile = resolve_tilde(config->pidfile);
 
-	btd_log(2, "Opening config at '%s'\n", config->configpath);
+	btd_logf(2, "Opening config at '%s'\n", config->configpath);
 	fp = safe_fopen(config->configpath, "r");
 
 	while (getline(&line, &len, fp) != -1) {

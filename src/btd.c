@@ -52,7 +52,7 @@ void sig_handler(int signo)
 	if (signo == SIGINT || signo == SIGTERM){
 		cleanup();
 		fflush(stdout);
-		depart("Signal %s caught\nQuitting...\n", strsignal(signo));
+		departf("Signal %s caught\nQuitting...\n", strsignal(signo));
 	}
 }
 
@@ -73,7 +73,7 @@ int connection_handler(int fd)
 			btd_log(1, "Early EOF?\n");
 			break;
 		}
-		printf("Parsed command: '%s'\n", cmd);
+		btd_logf(1, "Parsed command: '%s'\n", cmd);
 		if(strcasecmp("bibtex", cmd) == 0){
 			char *errmsg = NULL;
 			char *path = parse_str(stream);
@@ -144,7 +144,7 @@ int main (int argc, char **argv)
 	btd_config_print(config, stdout);
 
 	if(strlen(config->pidfile) > 0){
-		btd_log(2, "Writing pidfile at %s\n", config->pidfile);
+		btd_logf(2, "Writing pidfile at %s\n", config->pidfile);
 		FILE *pidfile = safe_fopen(config->pidfile, "w");
 		fprintf(pidfile, "%d", me);
 		safe_fclose(pidfile);
@@ -156,7 +156,7 @@ int main (int argc, char **argv)
 	/* Setup socket */
 	btd_log(2, "Registering socket\n");
 	for(struct addrinfo *r = config->socket; r != NULL; r=r->ai_next){
-		btd_log(0, "Trying to connect to: %s\n", pprint_address(r));
+		btd_logf(0, "Trying to connect to: %s\n", pprint_address(r));
 		socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
 
 		if(socket_fd < 0){
