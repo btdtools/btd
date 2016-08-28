@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #include <glob.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +9,16 @@
 #include <arpa/inet.h>
 
 #include "misc.h"
+
+void die(char *msg, ...)
+{
+	va_list ap;
+	va_start(ap, msg);
+	fprintf(stderr, "%s (%d): ", __FILE__, __LINE__);
+   	fprintf(stderr, msg, ap);
+	va_end(ap);
+	exit(EXIT_FAILURE);
+}
 
 void *safe_malloc(unsigned long int s)
 {
