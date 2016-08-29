@@ -40,4 +40,4 @@
 #filefmt = %year/%author - %title.%ext
 #
 ## Flag to check wether the bibtex snippets have the complete specs
-#check_fields = true
+check_fields = false

@@ -23,4 +23,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv);
 /* Print a configuration */
 void btd_config_print(struct btd_config *config, FILE *fp);
 
+/* Free a config */
+void btd_config_free(struct btd_config *config);
+
 #endif

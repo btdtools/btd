@@ -7,14 +7,21 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
+#include <netdb.h>
 
 #include "misc.h"
+
+void perrordie(char *prg)
+{
+	perror(prg);
+	die("Aborting\n");
+}
 
 void die(char *msg, ...)
 {
 	va_list ap;
 	va_start(ap, msg);
-   	fprintf(stderr, msg, ap);
+   	vfprintf(stderr, msg, ap);
 	va_end(ap);
 	exit(EXIT_FAILURE);
 }
@@ -22,38 +29,30 @@ void die(char *msg, ...)
 void *safe_malloc(unsigned long int s)
 {
 	void *r = malloc(s);
-	if(r == NULL){
-		perror("malloc");
-		die("malloc() failed\n");
-	}
+	if (r == NULL)
+		perrordie("malloc");
 	return r;
 }
 
 FILE *safe_fopen(char *p, char *mode)
 {
 	FILE *f = fopen(p, mode);
-	if(f == NULL){
-		perror("fopen");
-		die("fopen() failed\n");
-	}
+	if (f == NULL)
+		perrordie("fopen");
 	return f;
 }
 
 void safe_fclose(FILE *f)
 {
-	if(fclose(f) != 0){
-		perror("fclose");
-		die("fclose() failed\n");
-	}
+	if (fclose(f) != 0)
+		perrordie("fclose");
 }
 
 char *safe_strdup(const char *s)
 {
 	char *r = strdup(s);
-	if(r == NULL){
+	if (r == NULL)
 		perror("strdup");
-		die("strup() failed");
-	}
 	return r;
 }
 
@@ -62,15 +61,14 @@ char *safe_strcat(int count, ...)
 	va_list ap;
 	va_start(ap, count);
 	unsigned long int len = 0;
-	for(int i = 0; i<count; i++){
+	for (int i = 0; i<count; i++)
 		len += strlen(va_arg(ap, char *));
-	}
 	va_end(ap);
 
 	va_start(ap, count);
 	char *r = safe_malloc(len+1);
 	r[0] = '\0';
-	for(int i = 0; i<count; i++){
+	for (int i = 0; i<count; i++){
 		strcat(r, va_arg(ap, char *));
 	}
 	va_end(ap);
@@ -79,20 +77,16 @@ char *safe_strcat(int count, ...)
 
 void safe_fputs(FILE *f, char *m)
 {
-	if(fputs(m, f) < 0){
+	if (fputs(m, f) < 0)
 		perror("fputs");
-		die("fputs()\n");
-	}
 }
 
 void safe_fprintf(FILE *f, char *fmt, ...)
 {
 	va_list ap;
 	va_start(ap, fmt);
-	if(vfprintf(f, fmt, ap) < 0){
-		perror("fprintf");
-		die("fprintf\n");
-	};
+	if (vfprintf(f, fmt, ap) < 0)
+		perror("vfprintf");
 	va_end(ap);
 }
 
@@ -114,14 +108,13 @@ char *resolve_tilde(const char *path) {
 	if (res == GLOB_NOMATCH || globbuf.gl_pathc != 1) {
 		result = safe_strdup(path);
 	} else if (res != 0) {
-		die("glob() failed\n");
+		die("glob failed\n");
 	} else {
 		head = globbuf.gl_pathv[0];
 		result = calloc(strlen(head) + (tail ? strlen(tail) : 0) + 1, 1);
 		strncpy(result, head, strlen(head));
-		if (tail){
+		if (tail)
 			strncat(result, tail, strlen(tail));
-		}
 	}
 	globfree(&globbuf);
 
@@ -134,7 +127,7 @@ char *pprint_address(struct addrinfo *ai)
 	char *r = safe_malloc(20+108+1);
 	struct sockaddr_in *inadr;
 	struct sockaddr_in6 *in6adr;
-	switch(ai->ai_family){
+	switch (ai->ai_family){
 		case AF_UNIX:
 			sprintf(r, "Unix domain socket: %s", ai->ai_addr->sa_data);
 			break;

@@ -1,15 +1,10 @@
 #ifndef LOG_H
 #define LOG_H
 
-int btd_log_level;
-
-#define BTD_MAX_LOG 2
-#define BTD_MIN_LOG 0
-
-#define btd_log(lvl, ...) if(lvl <= btd_log_level) printf(__VA_ARGS__);
-
-#define btd_init_log() btd_log_level = 1;
-#define btd_decr_log() btd_log_level -= btd_log_level > BTD_MIN_LOG;
-#define btd_incr_log() btd_log_level += btd_log_level < BTD_MAX_LOG;
+int get_btd_log_level();
+void btd_init_log();
+void btd_log(int lvl, char *msg, ...);
+void btd_decr_log();
+void btd_incr_log();
 
 #endif

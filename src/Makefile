@@ -1,13 +1,13 @@
 PROGRAM:=btd
-OBJS:=config.o misc.o db.o bibtex.o xdg.o parse.o
+OBJS:=$(addsuffix .o,$(basename $(wildcard *.c)))
 
-CFLAGS:=-g -Wextra -Wall -Werror -pedantic
+CFLAGS:=-g -Wextra -Wall -Werror -pedantic -std=gnu11
 LDLIBS:=-lsqlite3
 
 all: $(PROGRAM)
 
-$(PROGRAM): $(PROGRAM).o $(OBJS)
-	$(CC) $< $(OBJS) $(LDLIBS) -o $@
+$(PROGRAM): $(OBJS)
+	$(LINK.c) $(LDLIBS) $^ $(OUTPUT_OPTION)
 
 clean:
-	$(RM) -v $(PROGRAM) $(PROGRAM).o $(OBJS)
+	$(RM) $(PROGRAM) $(OBJS)

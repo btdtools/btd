@@ -176,7 +176,7 @@ int db_num()
 	return num;
 }
 
-char *db_get(long long int id)
+char *db_get(long int id)
 {
 	char *l = NULL;
 	SQLITE_Q(sqlite3_prepare_v2(db, "SELECT bibtex FROM data WHERE rowid=?",
@@ -218,13 +218,14 @@ static int db_list_cb(void *nu, int argc, char **argv, char **cname)
 
 void db_list(FILE *fd)
 {
+	printf("list\n");
 	safe_fputs(fd, "id\tname\tauthor\tpath\tdate\tbibtex\n");
 	SQLITE_Q(sqlite3_exec(db, 
 		"SELECT rowid, name, author, path, datecreated, bibtex FROM data",
-			db_list_cb, &fd, &sqlite_currerr));
+			db_list_cb, fd, &sqlite_currerr));
 }
 
-void db_attach(char *fn, long long int id, long long int length, FILE *fd)
+void db_attach(char *fn, long int id, long int length, FILE *fd)
 {
 	char *bt = db_get(id);
 	if(bt == NULL){

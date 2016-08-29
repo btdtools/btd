@@ -41,7 +41,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 			btd_incr_log();
 			break;
 		case ARGP_KEY_ARG:
-			config->configpath = arg;
+			config->configpath = safe_strdup(arg);
 			break;
 		case ARGP_KEY_END:
 			break;
@@ -153,15 +153,17 @@ void update_config(struct btd_config *config, char *key, char *value){
 			}
 		}
 	} else if (strcmp(key, "datadir") == 0){
+		free(config->datadir);
 		config->datadir = resolve_tilde(value);
 	} else if (strcmp(key, "filefmt") == 0){
+		free(config->filefmt);
 		config->filefmt = resolve_tilde(value);
 	} else if (strcmp(key, "pidfile") == 0){
+		free(config->pidfile);
 		config->pidfile = safe_strdup(value);
 	} else if (strcmp(key, "check_fields") == 0){
-		if(strcmp(value, "true") != 0 && strcmp(value, "false") != 0){
+		if(strcmp(value, "true") != 0 && strcmp(value, "false") != 0)
 			die("check_fields can either be 'true' or 'false'\n");
-		}
 		config->check_fields = strcmp(value, "true") == 0;
 	}
 }
@@ -177,11 +179,11 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	config->socket = NULL;
 
 	config->filefmt = safe_strdup(".pdf");
-	config->check_fields = safe_strdup("false");
+	config->check_fields = true;
 	config->pidfile = safe_strdup("");
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
-	btd_log(2, "Arguments parsed. Loglevel set to %d\n", btd_log_level);
+	btd_log(2, "Arguments parsed. Loglevel set to %d\n", get_btd_log_level());
 
 	if(config->configpath == NULL){
 		config->configpath = get_config_path();
@@ -190,7 +192,6 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	key = safe_strcat(2, config->datadir, "/btd.socket");
 	create_unixsocket(config, key);
 	free(key);
-	config->pidfile = resolve_tilde(config->pidfile);
 
 	btd_log(2, "Opening config at '%s'\n", config->configpath);
 	fp = safe_fopen(config->configpath, "r");
@@ -202,10 +203,11 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 			die("strndup() failed\n");
 		}
 		update_config(config, key, line+sep+1);
-		free(key);
 		free(line);
+		free(key);
 		line = NULL;
 	}
+	free(line);
 	btd_log(2, "Done parsing\n");
 	config->db = safe_strcat(2, config->datadir, "/db.sqlite");
 
@@ -237,4 +239,15 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 		safe_fprintf(fp, "%s\n", s);
 		free(s);
 	}
+}
+
+void btd_config_free(struct btd_config *config)
+{
+	free(config->configpath);
+	freeaddrinfo(config->socket);
+	free(config->datadir);
+	free(config->db);
+	free(config->filefmt);
+	free(config->pidfile);
+	free(config);
 }

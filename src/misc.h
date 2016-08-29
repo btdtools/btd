@@ -7,6 +7,7 @@
 
 #define VERSION "0.1"
 
+void perrordie(char *prg);
 void die(char *msg, ...);
 void *safe_malloc(unsigned long int s);
 FILE *safe_fopen(char *p, char *mode);

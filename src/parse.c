@@ -51,7 +51,7 @@ char *parse_str(FILE *stream)
 	return buf;
 }
 
-bool parse_llint(FILE *stream, long long int *r)
+bool parse_llint(FILE *stream, long int *r)
 {
 	char *ref, *str = parse_str(stream);
 	printf("Trying to parse '%s' as a num\n", str);

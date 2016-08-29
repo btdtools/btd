@@ -13,7 +13,7 @@ int db_add_bibtex(struct bibtex_object *obj, char *path);
 int db_num();
 
 /* Get a bibtex snippet */
-char *db_get(long long int id);
+char *db_get(long int id);
 
 /* Print a list of bibtex snippets */
 void *db_list(FILE *fd);
