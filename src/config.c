@@ -60,6 +60,13 @@ static struct argp argp = {
 	.help_filter=NULL,
 	.argp_domain=NULL};
 
+static void free_config_socket(struct btd_config *config)
+{
+	if(config->socket->ai_family == AF_UNIX)
+		free(config->socket->ai_addr);
+	freeaddrinfo(config->socket);
+}
+
 static void create_unixsocket(struct btd_config *config, char *path)
 {
 	if(strlen(path) > 108){
@@ -109,7 +116,7 @@ void update_config(struct btd_config *config, char *key, char *value){
 
 	/* Configuration options */
 	if (strcmp(key, "socket") == 0){
-		printf("Trying to solve: '%s'\n", value);
+		free_config_socket(config);	
 		int portindex = -1;
 		for(int i = strlen(value)-1; i>=0; i--){
 			if(value[i] == ':'){
@@ -243,9 +250,8 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 
 void btd_config_free(struct btd_config *config)
 {
+	free_config_socket(config);
 	free(config->configpath);
-	free(config->socket->ai_addr);
-	freeaddrinfo(config->socket);
 	free(config->datadir);
 	free(config->db);
 	free(config->filefmt);

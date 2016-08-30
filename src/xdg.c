@@ -16,7 +16,6 @@ static char *get_file_if_exist(char *home, char *file)
 {
 	char *path = get_file(home, file);
 	if(path_exists(path)){
-		free(file);
 		return path;
 	}
 	free(path);

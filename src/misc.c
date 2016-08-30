@@ -78,7 +78,7 @@ char *safe_strcat(int count, ...)
 void safe_fputs(FILE *f, char *m)
 {
 	if (fputs(m, f) < 0)
-		perror("fputs");
+		perrordie("fputs");
 }
 
 void safe_fprintf(FILE *f, char *fmt, ...)
@@ -86,7 +86,7 @@ void safe_fprintf(FILE *f, char *fmt, ...)
 	va_list ap;
 	va_start(ap, fmt);
 	if (vfprintf(f, fmt, ap) < 0)
-		perror("vfprintf");
+		perrordie("vfprintf");
 	va_end(ap);
 }
 

@@ -71,11 +71,8 @@ int connection_handler(int fd)
 
 	while (true) {
 		free(cmd);
+		btd_log(1, "Going to parse command\n");
 		cmd = parse_str(stream);
-		if (cmd == NULL){
-			btd_log(1, "Early EOF?\n");
-			break;
-		}
 		btd_log(1, "Parsed command: '%s'\n", cmd);
 		if (strcasecmp("bibtex", cmd) == 0){
 			char *errmsg = NULL;
@@ -107,9 +104,9 @@ int connection_handler(int fd)
 		} else if (strcasecmp("attach", cmd) == 0){
 			char *fn = parse_str(stream);
 			long int num, length;
-			if(parse_llint(stream, &num) && parse_llint(stream, &length)){
+			if(parse_llint(stream, &num) && parse_llint(stream, &length))
 				db_attach(fn, num, length, stream);
-			}
+			free(fn);
 		} else if (strcasecmp("list", cmd) == 0){
 			fputs("0\n", stream);
 			db_list(stream);
@@ -118,12 +115,16 @@ int connection_handler(int fd)
 			break;
 		} else if (strcasecmp("help", cmd) == 0){
 			safe_fprintf(stream, "0\n%s\n", PROCOTOLUSAGE);
+		} else if (strcasecmp("", cmd) == 0){
+			fputs("0\nbye\n", stream);
+			break;
 		} else {
 			safe_fprintf(stream, "1\nUnknown command: '%s'\n", cmd);
 		}
 	}
+	fflush(stream);
 	btd_log(1, "Closing client...\n");
-	safe_fclose(stream);
+	fclose(stream);
 	return 0;
 }
 
@@ -136,9 +137,9 @@ int main(int argc, char **argv)
 
 	/* Register signal handlers */
 	if (signal(SIGINT, sig_handler) == SIG_ERR)
-		die("Can't catch SIGINT\n");
+		perrordie("signal(SIGINT)");
 	if (signal(SIGTERM, sig_handler) == SIG_ERR)
-		die("Can't catch SIGTERM\n");
+		perrordie("signal(SIGTERM)");
 
 	/* Parse args and config */
 	config = safe_malloc(sizeof (struct btd_config));
@@ -175,10 +176,8 @@ int main(int argc, char **argv)
 		} else {
 			btd_log(2, "Bound socket\n");
 
-			if (listen(socket_fd, 5) != 0) {
-				perror("listen");
-				die("Bye\n");
-			}
+			if (listen(socket_fd, 5) != 0)
+				perrordie("listen");
 			btd_log(2, "Listening to socket\n");
 			btd_log(1, "Waiting for a client to connect\n");
 			while ((connection_fd = accept(socket_fd, 

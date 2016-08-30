@@ -185,9 +185,8 @@ char *db_get(long int id)
 	SQLITE_Q(sqlite3_bind_int(stmt, 1, id));
 
 	rc = sqlite3_step(stmt);
-	if(rc == SQLITE_ROW){
+	if(rc == SQLITE_ROW)
 		l = safe_strdup((char *)sqlite3_column_text(stmt, 0));
-	}
 
 	SQLITE_Q(sqlite3_finalize(stmt));
 	return l;
@@ -197,17 +196,14 @@ static int db_list_cb(void *nu, int argc, char **argv, char **cname)
 {
 	FILE *fd = (FILE *)nu;
 	/* Cut off entries longer than 10 chars */
-	for(int i = 0; i<4; i++){
-		if(strlen(argv[i]) > 10){
+	for (int i = 0; i<4; i++)
+		if (strlen(argv[i]) > 10)
 			strcpy(argv[i]+strlen(argv[i])-4, "...");
-		}
-	}
+
 	/* Cut off entries longer than 20 chars */
-	for(int i = 4; i<6; i++){
-		if(strlen(argv[i]) > 20){
+	for (int i = 4; i<6; i++)
+		if (strlen(argv[i]) > 20)
 			strcpy(argv[i]+strlen(argv[i])-4, "...");
-		}
-	}
 
 	safe_fprintf(fd, "%s\t%s\t%s\t%s\t%s\t%s\n",
 		argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
@@ -218,7 +214,6 @@ static int db_list_cb(void *nu, int argc, char **argv, char **cname)
 
 void db_list(FILE *fd)
 {
-	printf("list\n");
 	safe_fputs(fd, "id\tname\tauthor\tpath\tdate\tbibtex\n");
 	SQLITE_Q(sqlite3_exec(db, 
 		"SELECT rowid, name, author, path, datecreated, bibtex FROM data",
@@ -227,13 +222,18 @@ void db_list(FILE *fd)
 
 void db_attach(char *fn, long int id, long int length, FILE *fd)
 {
+	char c;
 	char *bt = db_get(id);
 	if(bt == NULL){
 		safe_fprintf(fd, "1\nNot a valid id\n");
 	} else {
 		free(bt);
-		safe_fprintf(fd, "0\nAttaching to %lld with name %s bytes %lld\n", id, fn, length);
+		while((c = fgetc(fd)) != EOF && length-- > 0)
+			printf("read char %c\n", c);
+		if(length > 0)
+			printf("Early EOF in file data?\n");
 	}
+	(void)fn;
 }
 
 void db_close()

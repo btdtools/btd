@@ -11,6 +11,6 @@ char *rtrim(char *s);
 
 char *parse_str(FILE *stream);
 bool parse_llint(FILE *stream, long int *r);
-void skip_white(FILE *stream);
+char skip_white(FILE *stream);
 
 #endif
