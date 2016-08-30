@@ -34,19 +34,19 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 
 	switch (key)
 	{
-		case 'q':
-			btd_decr_log();
-			break;
-		case 'v':
-			btd_incr_log();
-			break;
-		case ARGP_KEY_ARG:
-			config->configpath = safe_strdup(arg);
-			break;
-		case ARGP_KEY_END:
-			break;
-		default:
-			return ARGP_ERR_UNKNOWN;
+	case 'q':
+		btd_decr_log();
+		break;
+	case 'v':
+		btd_incr_log();
+		break;
+	case ARGP_KEY_ARG:
+		config->configpath = safe_strdup(arg);
+		break;
+	case ARGP_KEY_END:
+		break;
+	default:
+		return ARGP_ERR_UNKNOWN;
 	}
 	return 0;
 }
@@ -62,14 +62,14 @@ static struct argp argp = {
 
 static void free_config_socket(struct btd_config *config)
 {
-	if(config->socket->ai_family == AF_UNIX)
+	if (config->socket->ai_family == AF_UNIX)
 		free(config->socket->ai_addr);
 	freeaddrinfo(config->socket);
 }
 
 static void create_unixsocket(struct btd_config *config, char *path)
 {
-	if(strlen(path) > 108){
+	if (strlen(path) > 108){
 		btd_log(0, "Path is too long(%lu), UNIX socket can be 108 max\n",
 			strlen(path));
 		die("Socket creation failed\n");
@@ -98,35 +98,32 @@ void update_config(struct btd_config *config, char *key, char *value){
 	key = rtrim(ltrim(key));
 
 	/* If the key is empty or the line starts with a comment we skip */
-	if (key[0] == '#' || strlen(key) == 0){
+	if (key[0] == '#' || strlen(key) == 0)
 		return;
-	}
 
 	/* If the key contains a comment we skip */
-	if (strchr("key", (char)'#') != NULL){
+	if (strchr("key", (char)'#') != NULL)
 		return;
-	}
 	value[strcspn(value, "#")] = '\0';
 	value = rtrim(ltrim(value));
 
 	/* If the value stripped of comments is empty we skip */
-	if (strlen(value) == 0){
+	if (strlen(value) == 0)
 		return;
-	}
 
 	/* Configuration options */
 	if (strcmp(key, "socket") == 0){
 		free_config_socket(config);	
 		int portindex = -1;
-		for(int i = strlen(value)-1; i>=0; i--){
-			if(value[i] == ':'){
+		for (int i = strlen(value)-1; i>=0; i--){
+			if (value[i] == ':'){
 				char *end;
 				strtol(value+i+1, &end, 10);
-				if(value+i+1 != end){
+				if (value+i+1 != end){
 					portindex = i+1;
 					value[i] = '\0';
 					btd_log(2, "Found port spec: %s\n", value+portindex);
-					if(value[0] == '[' && value[strlen(value)-1] == ']'){
+					if (value[0] == '[' && value[strlen(value)-1] == ']'){
 						btd_log(2, "Stripping ipv6 square braces\n");
 						value = value+1;
 						value[strlen(value)-1] = '\0';
@@ -145,7 +142,7 @@ void update_config(struct btd_config *config, char *key, char *value){
         hints.ai_flags = AI_PASSIVE;
 
 		btd_log(2, "Address without port: %s\n", value);
-		if(portindex == -1){
+		if (portindex == -1){
 			btd_log(2, "no port found so treating it as a unix socket\n");
 			create_unixsocket(config, value);
 		} else {
@@ -192,7 +189,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	argp_parse(&argp, argc, argv, 0, 0, config);
 	btd_log(2, "Arguments parsed. Loglevel set to %d\n", get_btd_log_level());
 
-	if(config->configpath == NULL){
+	if (config->configpath == NULL){
 		config->configpath = get_config_path();
 	}
 	config->datadir = get_data_path();
@@ -221,7 +218,8 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	safe_fclose(fp);
 }
 
-void btd_config_print(struct btd_config *config, FILE *fp){
+void btd_config_print(struct btd_config *config, FILE *fp)
+{
 	safe_fprintf(fp, 
 		"BTD Config digest\n"
 		"-----------------\n"
@@ -241,7 +239,7 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 			);
 	safe_fputs(fp, "sockets:\n");
 	char *s;
-	for(struct addrinfo *r = config->socket; r != NULL; r=r->ai_next){
+	for (struct addrinfo *r = config->socket; r != NULL; r=r->ai_next){
 		s = pprint_address(r);
 		safe_fprintf(fp, "%s\n", s);
 		free(s);

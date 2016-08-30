@@ -94,7 +94,7 @@ int connection_handler(int fd)
 			long int num;
 			if (parse_llint(stream, &num)){
 				char *bibtex_str = db_get(num);
-				if(bibtex_str == NULL){
+				if (bibtex_str == NULL){
 					fputs("1\nNumber not a valid ID\n", stream);
 				} else {
 					safe_fprintf(stream, "0\n%s\n", bibtex_str);
@@ -104,20 +104,17 @@ int connection_handler(int fd)
 		} else if (strcasecmp("attach", cmd) == 0){
 			char *fn = parse_str(stream);
 			long int num, length;
-			if(parse_llint(stream, &num) && parse_llint(stream, &length))
+			if (parse_llint(stream, &num) && parse_llint(stream, &length))
 				db_attach(fn, num, length, stream);
 			free(fn);
 		} else if (strcasecmp("list", cmd) == 0){
 			fputs("0\n", stream);
 			db_list(stream);
-		} else if (strcasecmp("bye", cmd) == 0){
+		} else if (strcasecmp("bye", cmd) == 0 || strlen(cmd) == 0){
 			fputs("0\nbye\n", stream);
 			break;
 		} else if (strcasecmp("help", cmd) == 0){
 			safe_fprintf(stream, "0\n%s\n", PROCOTOLUSAGE);
-		} else if (strcasecmp("", cmd) == 0){
-			fputs("0\nbye\n", stream);
-			break;
 		} else {
 			safe_fprintf(stream, "1\nUnknown command: '%s'\n", cmd);
 		}

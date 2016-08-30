@@ -49,7 +49,7 @@ static int db_get_version_cb(void *nu, int argc, char **argv, char **cname)
 
 static char **db_get_version()
 {
-	char **data = safe_malloc((sizeof (char*))*2);
+	char **data = safe_malloc((sizeof(char*))*2);
 	SQLITE_Q(sqlite3_exec(db, "SELECT version, datecreated FROM config",
 			db_get_version_cb, data, &sqlite_currerr));
 	return data;
@@ -58,7 +58,7 @@ static char **db_get_version()
 void db_convert(char *version)
 {
 	btd_log(2, "Db version: %s, current version: %s\n", version, VERSION);
-	if(strcmp(version, VERSION) == 0){
+	if (strcmp(version, VERSION) == 0){
 		btd_log(2, "Db up to date\n");
 	} else {
 		die("Database version: %s\n"
@@ -98,18 +98,14 @@ int db_add_bibtex(struct bibtex_object *obj, char *path)
 
 	free(print);
 	sqlite3_int64 rowid2 = sqlite3_last_insert_rowid(db);
-	if(rowid2 != 0 && rowid != rowid2){
-		return rowid2;
-	} else {
-		return -1;
-	}
+	return rowid2 != 0 && rowid != rowid2 ? rowid2 : -1;
 }
 
 static void create_folder(char *p)
 {
-	if(!path_exists(p)){
+	if (!path_exists(p)){
 		btd_log(1, "%s doesn't exist, creating\n", p);
-		if(mkdir(p, 0777) != 0){
+		if (mkdir(p, 0777) != 0){
 			perror("mkdir");
 			die("mkdir()\n");
 		}
@@ -119,8 +115,8 @@ static void create_folder(char *p)
 static void create_folder_rec(char *p)
 {
 	char t;
-	for(unsigned long int i = 0; i<strlen(p); i++){
-		if(p[i] == '/'){
+	for (unsigned long int i = 0; i<strlen(p); i++){
+		if (p[i] == '/'){
 			t = p[i+1];
 			p[i+1] = '\0';
 			create_folder(p);
@@ -224,7 +220,7 @@ void db_attach(char *fn, long int id, long int length, FILE *fd)
 {
 	char c;
 	char *bt = db_get(id);
-	if(bt == NULL){
+	if (bt == NULL){
 		safe_fprintf(fd, "1\nNot a valid id\n");
 	} else {
 		free(bt);

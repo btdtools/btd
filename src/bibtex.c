@@ -9,19 +9,15 @@
 #define BUFSIZE 4048
 
 #define EXPECT(c, err) {\
-	if (c == EOF) \
-		*errmsg = safe_strdup("Early EOF\n"); \
-	else \
-		safe_strcat(5, "Expected ", err, (char [2]){c, '\0'}, "'\n"); \
+	if (c == EOF) *errmsg = safe_strdup("Early EOF\n"); \
+	else safe_strcat(5, "Expected ", err, (char [2]){c, '\0'}, "'\n"); \
 	bibtex_free(obj);\
 	return NULL;}
-#define SKIP_WHITE(c, istream)\
-	while (isspace(c))\
-		c = fgetc(istream)
+#define SKIP_WHITE(c, istream) while (isspace(c)) c = fgetc(istream)
 
 char *bibtex_field_str(bibtex_field field, char *other)
 {
-	switch(field){
+	switch (field){
 	case BIBTEX_FIELD_ADDRESS:
 		return "address";
 	case BIBTEX_FIELD_ANNOTE:
@@ -130,7 +126,7 @@ bibtex_field bibtex_str_field(char *str)
 
 char *bibtex_entry_str(bibtex_entrytype type)
 {
-	switch(type){
+	switch (type){
 	case BIBTEX_ENTRY_ARTICLE:
 		return "article";
 	case BIBTEX_ENTRY_BOOK:
@@ -224,10 +220,10 @@ char *bibtex_get_author(struct bibtex_object *obj)
 	}
 }
 
-struct bibtex_object *bibtex_parse(
-	FILE *istream, char **errmsg, bool check_fields)
+struct bibtex_object *
+bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 {
-	struct bibtex_object *obj = safe_malloc(sizeof (struct bibtex_object));
+	struct bibtex_object *obj = safe_malloc(sizeof(struct bibtex_object));
 	struct bibtex_entry *current;
 	char buf[BUFSIZE+1];
 	char c;
@@ -243,31 +239,31 @@ struct bibtex_object *bibtex_parse(
 	SKIP_WHITE(c, istream);
 
 	//Read @
-	if(c != '@')
+	if (c != '@')
 		EXPECT(c, "'@'");
 
 	//Read entrytype
-	while(isalpha(c = fgetc(istream)) && bufloc < BUFSIZE)
+	while (isalpha(c = fgetc(istream)) && bufloc < BUFSIZE)
 		buf[bufloc++] = c;
 	buf[bufloc] = '\0';
-	if((obj->type = bibtex_str_entry(buf)) == BIBTEX_ENTRY_UNKNOWN){
+	if ((obj->type = bibtex_str_entry(buf)) == BIBTEX_ENTRY_UNKNOWN){
 		*errmsg = safe_strcat(3, "Invalid bibtex entry type: '", buf, ",\n");
 		bibtex_free(obj);
 		return NULL;
 	}
 
 	//Read openbrace
-	if(c != '{')
+	if (c != '{')
 		EXPECT(c, "'{'");
 	//Read ident
 	bufloc = 0;
-	while((isalnum(c = fgetc(istream)) || 
+	while ((isalnum(c = fgetc(istream)) || 
 			c == '|' || c == '+' || c == '_' || c == '-') 
 			&& bufloc < BUFSIZE) {
 		buf[bufloc++] = c;
 	}
 	buf[bufloc] = '\0';
-	if(bufloc == 0){
+	if (bufloc == 0){
 		*errmsg = safe_strdup("Identifier can't be empty\n");
 		bibtex_free(obj);
 		return NULL;
@@ -278,8 +274,8 @@ struct bibtex_object *bibtex_parse(
 	SKIP_WHITE(c, istream);
 
 	//Read key-valuepairs
-	while(c == ','){
-		current = safe_malloc(sizeof (struct bibtex_entry));
+	while (c == ','){
+		current = safe_malloc(sizeof(struct bibtex_entry));
 		current->key = NULL;
 		//skip whitespace
 		c = fgetc(istream);
@@ -288,18 +284,17 @@ struct bibtex_object *bibtex_parse(
 		//parse ident
 		bufloc = 0;
 		buf[bufloc++] = c;
-		while(isalpha(c = fgetc(istream)) && bufloc < BUFSIZE) {
+		while (isalpha(c = fgetc(istream)) && bufloc < BUFSIZE)
 			buf[bufloc++] = c;
-		}
 		buf[bufloc] = '\0';
-		if((current->field = bibtex_str_field(buf)) == BIBTEX_FIELD_OTHER)
+		if ((current->field = bibtex_str_field(buf)) == BIBTEX_FIELD_OTHER)
 			current->key = safe_strdup(buf);
 
 		//skip whitespace
 		SKIP_WHITE(c, istream);
 
 		//parse '='
-		if(c != '=')
+		if (c != '=')
 			EXPECT(c, "'='");
 
 		//skip whitespace
@@ -446,8 +441,7 @@ char *bibtex_print(struct bibtex_object *obj){
 
 void bibtex_free(struct bibtex_object *obj)
 {
-	struct bibtex_entry *head = obj->head;
-	struct bibtex_entry *next;
+	struct bibtex_entry *next, *head = obj->head;
 	free(obj->identifier);
 	while (head != NULL) {
 		if (head->field == BIBTEX_FIELD_OTHER)

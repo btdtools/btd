@@ -15,9 +15,8 @@ static char *get_file(char *home, char *file)
 static char *get_file_if_exist(char *home, char *file)
 {
 	char *path = get_file(home, file);
-	if(path_exists(path)){
+	if (path_exists(path))
 		return path;
-	}
 	free(path);
 	free(file);
 	return NULL;
@@ -26,7 +25,7 @@ static char *get_file_if_exist(char *home, char *file)
 static char *safe_getenv(char *env, char *def)
 {
 	char *t;
-	if((t = getenv(env)) != NULL)
+	if ((t = getenv(env)) != NULL)
 		def = t;
 	return safe_strdup(def);
 }
@@ -37,7 +36,7 @@ char *get_config_path()
    
 	/* Check user xdg config file */
 	btd_log(2, "Checking XDG_CONFIG_HOME/btd/config\n");
-	if((cf = get_file_if_exist(
+	if ((cf = get_file_if_exist(
 		safe_getenv("XDG_CONFIG_HOME", "~/.config"), "/btd/config")) != NULL){
 		btd_log(2, "Found!\n");
 		return cf;
@@ -47,9 +46,9 @@ char *get_config_path()
 	btd_log(2, "Checking XDG_CONFIG_DIRS\n");
 	char *systempaths = safe_getenv("XDG_CONFIG_DIRS", "/etc/xdg");
 	char *token, *spaths = systempaths;
-	while((token = strsep(&systempaths, ":")) != NULL){
+	while ((token = strsep(&systempaths, ":")) != NULL){
 		btd_log(2, "Checking %s/btd/config\n", token);
-		if((cf = get_file_if_exist(token, "/btd/config")) != NULL){
+		if ((cf = get_file_if_exist(token, "/btd/config")) != NULL){
 			btd_log(2, "Found!\n");
 			free(spaths);
 			return cf;
@@ -67,7 +66,7 @@ char *get_data_path(){
 
 	/* Check user data dir */
 	btd_log(2, "Checking XDG_DATA_HOME/btd\n");
-	if((df = get_file_if_exist(home, "/btd")) != NULL){
+	if ((df = get_file_if_exist(home, "/btd")) != NULL){
 		btd_log(2, "Found!\n");
 		free(home);
 		return df;
@@ -78,9 +77,9 @@ char *get_data_path(){
 	char *systempaths = safe_getenv("XDG_DATA_DIRS",
 		"/usr/local/share:/usr/share");
 	char *token, *spaths = systempaths;
-	while((token = strsep(&systempaths, ":")) != NULL){
+	while ((token = strsep(&systempaths, ":")) != NULL){
 		btd_log(2, "Checking %s/btd\n", token);
-		if((df = get_file_if_exist(token, "/btd")) != NULL){
+		if ((df = get_file_if_exist(token, "/btd")) != NULL){
 			btd_log(2, "Found!\n");
 			free(spaths);
 			return df;

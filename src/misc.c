@@ -34,6 +34,14 @@ void *safe_malloc(unsigned long int s)
 	return r;
 }
 
+void *safe_calloc(unsigned long int nm, unsigned long int s)
+{
+	void *r = calloc(nm, s);
+	if (r == NULL)
+		perrordie("calloc");
+	return r;
+}
+
 FILE *safe_fopen(char *p, char *mode)
 {
 	FILE *f = fopen(p, mode);
