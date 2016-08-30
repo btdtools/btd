@@ -244,6 +244,7 @@ void btd_config_print(struct btd_config *config, FILE *fp){
 void btd_config_free(struct btd_config *config)
 {
 	free(config->configpath);
+	free(config->socket->ai_addr);
 	freeaddrinfo(config->socket);
 	free(config->datadir);
 	free(config->db);
