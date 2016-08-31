@@ -214,6 +214,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	free(line);
 	btd_log(2, "Done parsing\n");
 	config->db = safe_strcat(2, config->datadir, "/db.sqlite");
+	config->filesdir = safe_strcat(2, config->datadir, "/files/");
 
 	safe_fclose(fp);
 }
@@ -252,6 +253,7 @@ void btd_config_free(struct btd_config *config)
 	free(config->configpath);
 	free(config->datadir);
 	free(config->db);
+	free(config->filesdir);
 	free(config->filefmt);
 	free(config->pidfile);
 	free(config);

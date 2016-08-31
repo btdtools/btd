@@ -11,6 +11,7 @@ struct btd_config
 	/* Configuration options */
 	struct addrinfo *socket;
 	char *datadir;
+	char *filesdir;
 	char *db;
 	char *filefmt;
 	char *pidfile;

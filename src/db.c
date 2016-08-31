@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <uuid/uuid.h>
+
 #include "config.h"
 #include "log.h"
 #include "misc.h"
@@ -26,10 +28,17 @@ char *sqlite_create_cfg_table =
 char *sqlite_create_data_table =
 	"CREATE TABLE IF NOT EXISTS data"
 	"(name TEXT, author TEXT, path TEXT, datecreated TEXT, bibtex TEXT);";
+char *sqlite_create_file_table =
+	"CREATE TABLE IF NOT EXISTS files"
+	"(data INTEGER, path TEXT, uuid TEXT);";
 char *sqlite_add_datarow =
 	"INSERT INTO data "
 	"(name, author, path, datecreated, bibtex)"
 	"VALUES (?, ?, ?, date('now'), ?);";
+char *sqlite_add_filerow =
+	"INSERT INTO files "
+	"(data, path, uuid)"
+	"VALUES (?, ?, ?);";
 
 struct btd_config *config;
 sqlite3 *db;
@@ -79,13 +88,16 @@ int db_add_bibtex(struct bibtex_object *obj, char *path)
 	btd_log(2, "Binding name\n");
 	SQLITE_Q(sqlite3_bind_text(stmt, 1, obj->identifier,
 			strlen(obj->identifier), SQLITE_STATIC));
+
 	btd_log(2, "Binding author\n");
 	char *author = bibtex_get_author(obj);
 	SQLITE_Q(sqlite3_bind_text(stmt, 2, author,
 			strlen(author), SQLITE_STATIC));
+
 	btd_log(2, "Binding path\n");
 	SQLITE_Q(sqlite3_bind_text(stmt, 3, path,
 			strlen(path), SQLITE_STATIC))
+
 	btd_log(2, "Binding bibtex\n");
 	SQLITE_Q(sqlite3_bind_text(stmt, 4, print,
 			strlen(print), SQLITE_STATIC));
@@ -133,7 +145,7 @@ void db_init(struct btd_config *cfg)
 	config = cfg;
 
 	btd_log(2, "Creating filesystem at: '%s'\n", config->datadir);
-	create_folder_rec(config->datadir);
+	create_folder_rec(config->filesdir);
 
 	btd_log(2, "Filesystem initialized\n");
 
@@ -145,6 +157,9 @@ void db_init(struct btd_config *cfg)
 
 	btd_log(2, "Creating or verifying data table\n");
 	SQLITE_Q(sqlite3_exec(db, sqlite_create_data_table, NULL, 0, &sqlite_currerr));
+
+	btd_log(2, "Creating or verifying files table\n");
+	SQLITE_Q(sqlite3_exec(db, sqlite_create_file_table, NULL, 0, &sqlite_currerr));
 
 	datever = db_get_version();
 	btd_log(1, "Opened db v%s created on %s\n", datever[0], datever[1]);
@@ -218,18 +233,43 @@ void db_list(FILE *fd)
 
 void db_attach(char *fn, long int id, long int length, FILE *fd)
 {
-	char c;
-	char *bt = db_get(id);
+	char c, *bt = db_get(id), ustr[37], ids[40];
+	uuid_t uuid;
 	if (bt == NULL){
 		safe_fprintf(fd, "1\nNot a valid id\n");
 	} else {
 		free(bt);
+		uuid_generate_random(uuid);
+		uuid_unparse_lower(uuid, ustr);
+
+		btd_log(2, "Adding file entry with uuid: '%s'\n", ustr);
+		SQLITE_Q(sqlite3_prepare_v2(db, sqlite_add_filerow, -1, &stmt, 0));
+
+		sprintf(ids, "%ld", id);
+		btd_log(2, "Binding dataid\n");
+		SQLITE_Q(sqlite3_bind_text(stmt, 1, ids, strlen(ids), SQLITE_STATIC));
+
+		btd_log(2, "Binding uuid\n");
+		SQLITE_Q(sqlite3_bind_text(stmt, 2, ustr, strlen(ustr), SQLITE_STATIC));
+
+		btd_log(2, "Binding path\n");
+		SQLITE_Q(sqlite3_bind_text(stmt, 3, fn, strlen(fn), SQLITE_STATIC));
+
+		btd_log(2, "Step\n");
+		SQLITE_E(sqlite3_step(stmt), SQLITE_DONE);
+
+		btd_log(2, "Finalize\n");
+		SQLITE_Q(sqlite3_finalize(stmt));
+
+		bt = safe_strcat(2, config->filesdir, ustr);
+		FILE *f = safe_fopen(bt, "w");
 		while((c = fgetc(fd)) != EOF && length-- > 0)
-			printf("read char %c\n", c);
+			fputc(c, f);
+		safe_fclose(f);
 		if(length > 0)
 			printf("Early EOF in file data?\n");
+		free(bt);
 	}
-	(void)fn;
 }
 
 void db_close()

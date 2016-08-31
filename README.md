@@ -7,8 +7,8 @@ future it will have several frontends and advanced import features.
 ### Documentation
 #### Installation
 To compile you can run `make`. Note that this requires the development headers
-of [sqlite][sqlite]. On debian (derivatives) you can just install
-`libsqlite3-dev`.
+of [sqlite][sqlite] and [libuuid][uuid]. On debian (derivatives) you can just
+install `libsqlite3-dev` and `uuid-dev`.
 
 To create manpage can run `make man` after installing `help2man`.
 
@@ -52,3 +52,4 @@ standards described [here][xdgspec].
 
 [sqlite]: https://sqlite.org/ "SQLite"
 [xdgspec]: https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html "Latest XDG spec"
+[uuid]: https://www.kernel.org/pub/linux/utils/util-linux/ "Libuuid is part of util-linux"
