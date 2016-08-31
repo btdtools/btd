@@ -34,6 +34,13 @@ void *safe_malloc(unsigned long int s)
 	return r;
 }
 
+void *safe_realloc(void *p, unsigned long int s)
+{
+	if ((p = realloc(p, s)) == NULL)
+		perrordie("calloc");
+	return p;
+}
+
 void *safe_calloc(unsigned long int nm, unsigned long int s)
 {
 	void *r = calloc(nm, s);

@@ -68,8 +68,7 @@ char *parse_str(FILE *stream)
 
 		buf[position++] = c;
 		if (position >= size-1)
-			if ((buf = realloc(buf, size *= 2)) == NULL)
-				perrordie("realloc");
+			buf = safe_realloc(buf, size *= 2);
 	}
 	buf[position] = '\0';
 	return buf;
