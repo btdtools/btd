@@ -231,6 +231,12 @@ void db_list(FILE *fd)
 			db_list_cb, fd, &sqlite_currerr));
 }
 
+void db_detach(long int id)
+{
+		btd_log(2, "Removing file with id: %d\n", id);
+}
+
+
 void db_attach(char *fn, long int id, long int length, FILE *fd)
 {
 	char c, *bt = db_get(id), ustr[37], ids[40];
@@ -266,8 +272,10 @@ void db_attach(char *fn, long int id, long int length, FILE *fd)
 		while((c = fgetc(fd)) != EOF && length-- > 0)
 			fputc(c, f);
 		safe_fclose(f);
-		if(length > 0)
-			printf("Early EOF in file data?\n");
+		if(length > 0){
+			btd_log(1, "Early EOF in file data?\n");
+			db_detach(sqlite3_last_insert_rowid(db));
+		}
 		free(bt);
 	}
 }

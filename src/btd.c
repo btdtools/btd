@@ -77,6 +77,7 @@ int connection_handler(int fd)
 		if (strcasecmp("bibtex", cmd) == 0){
 			char *errmsg = NULL;
 			char *path = parse_str(stream);
+			btd_log(2, "path parsed: %s\n", path);
 			struct bibtex_object *obj =\
 				bibtex_parse(stream, &errmsg, config->check_fields);
 			if (obj == NULL){
@@ -86,6 +87,7 @@ int connection_handler(int fd)
 				int id = db_add_bibtex(obj, path);
 				bibtex_free(obj);
 				safe_fprintf(stream, "0\nAdded with id: %d\n", id);
+				free(errmsg);
 			}
 			free(path);
 		} else if (strcasecmp("num", cmd) == 0){
@@ -119,6 +121,7 @@ int connection_handler(int fd)
 			safe_fprintf(stream, "1\nUnknown command: '%s'\n", cmd);
 		}
 	}
+	free(cmd);
 	fflush(stream);
 	btd_log(1, "Closing client...\n");
 	fclose(stream);

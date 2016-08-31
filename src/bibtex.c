@@ -9,8 +9,10 @@
 #define BUFSIZE 4048
 
 #define EXPECT(c, err) {\
-	if (c == EOF) *errmsg = safe_strdup("Early EOF\n"); \
-	else safe_strcat(5, "Expected ", err, (char [2]){c, '\0'}, "'\n"); \
+	if (c == EOF)\
+		*errmsg = safe_strcat(3, "Expected ", err, " got EOF\n"); \
+	else\
+		*errmsg = safe_strcat(5, "Expected ", err, " got '", (char [2]){c, '\0'}, "'\n");\
 	bibtex_free(obj);\
 	return NULL;}
 #define SKIP_WHITE(c, istream) while (isspace(c)) c = fgetc(istream)
@@ -254,7 +256,7 @@ bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 
 	//Read openbrace
 	if (c != '{')
-		EXPECT(c, "'{'");
+		EXPECT(c, "{");
 	//Read ident
 	bufloc = 0;
 	while ((isalnum(c = fgetc(istream)) || 
@@ -351,7 +353,7 @@ bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 		}
 	}
 	if (c != '}')
-		EXPECT(c, "'}'");
+		EXPECT(c, "}");
 	
 #define REQUIRE_EITHER(s1, s2)\
 	if (bibtex_get_field_str(obj, s1) == NULL ||\
