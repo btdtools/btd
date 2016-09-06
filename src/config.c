@@ -94,6 +94,13 @@ static void create_unixsocket(struct btd_config *config, char *path)
 	free(sa);
 }
 
+bool parse_boolean(char *value, char *name)
+{
+	if(strcmp(value, "true") != 0 && strcmp(value, "false") != 0)
+		die("%s can either be 'true' or 'false'\n", name);
+	return strcmp(value, "true") == 0;
+}
+
 void update_config(struct btd_config *config, char *key, char *value){
 	key = rtrim(ltrim(key));
 
@@ -166,9 +173,9 @@ void update_config(struct btd_config *config, char *key, char *value){
 		free(config->pidfile);
 		config->pidfile = safe_strdup(value);
 	} else if (strcmp(key, "check_fields") == 0){
-		if(strcmp(value, "true") != 0 && strcmp(value, "false") != 0)
-			die("check_fields can either be 'true' or 'false'\n");
-		config->check_fields = strcmp(value, "true") == 0;
+		config->check_fields = parse_boolean(value, "check_fields");
+	} else if (strcmp(key, "multithread") == 0){
+		config->multithread = parse_boolean(value, "multithread");
 	}
 }
 
@@ -184,6 +191,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 
 	config->filefmt = safe_strdup(".pdf");
 	config->check_fields = true;
+	config->multithread = true;
 	config->pidfile = safe_strdup("");
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
@@ -230,13 +238,15 @@ void btd_config_print(struct btd_config *config, FILE *fp)
 		"database:'%s'\n"
 		"filefmt: '%s'\n"
 		"pidfile: '%s'\n"
-		"check_fields: '%s'\n",
+		"check_fields: '%s'\n"
+		"multithread: '%s'\n",
 			config->configpath,
 			config->datadir,
 			config->db,
 			config->filefmt,
 			config->pidfile,
-			config->check_fields ? "true": "false"
+			config->check_fields ? "true": "false",
+			config->multithread ? "true": "false"
 			);
 	safe_fputs(fp, "sockets:\n");
 	char *s;

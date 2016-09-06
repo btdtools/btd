@@ -63,10 +63,8 @@ int connection_handler(int fd)
 {
 	char *cmd = NULL;
 	FILE *stream = fdopen(fd, "r+");
-	if (stream == NULL){
-		perror("fdopen");
-		die("fdopen() failed\n");
-	}
+	if (stream == NULL)
+		perrordie("fdopen");
 	safe_fprintf(stream, "btd %s\n", VERSION);
 
 	while (true) {
@@ -131,7 +129,7 @@ int connection_handler(int fd)
 int main(int argc, char **argv)
 {
 	int connection_fd;
-	pid_t child, me = getpid();
+	pid_t me = getpid();
 
 	btd_init_log();
 
@@ -183,9 +181,12 @@ int main(int argc, char **argv)
 			while ((connection_fd = accept(socket_fd, 
 					r->ai_addr, &r->ai_addrlen)) > -1) {
 				btd_log(1, "Client connected...\n");
-				child = fork();
-				if (child == 0)
+				if (config->multithread){
+					if (fork() == 0)
+						return connection_handler(connection_fd);
+				} else {
 					return connection_handler(connection_fd);
+				}
 				close(connection_fd);
 			}
 			break;

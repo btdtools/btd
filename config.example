@@ -41,3 +41,6 @@
 #
 ## Flag to check wether the bibtex snippets have the complete specs
 #check_fields = false
+#
+## Flag to disable multithreading, only use this for debugging purposes.
+#multithread = true

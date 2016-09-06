@@ -18,7 +18,7 @@
 	if(rc != c){\
 		printf("SQLite error: %s\n", sqlite3_errmsg(db)); \
 		die("SQLite error: %d-%s\n", rc, sqlite_currerr);\
-	}\
+	}
 
 char *sqlite_create_cfg_table =
 	"CREATE TABLE IF NOT EXISTS config"

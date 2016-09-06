@@ -16,6 +16,7 @@ struct btd_config
 	char *filefmt;
 	char *pidfile;
 	bool check_fields;
+	bool multithread;
 };
 
 /* Populate a structure, read from args and config file */
