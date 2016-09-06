@@ -43,4 +43,4 @@
 #check_fields = false
 #
 ## Flag to disable multithreading, only use this for debugging purposes.
-#multithread = true
+multithread = false

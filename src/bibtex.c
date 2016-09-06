@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -223,8 +224,47 @@ char *bibtex_get_author(struct bibtex_object *obj)
 }
 
 struct bibtex_object *
+require_either(struct bibtex_object *obj, char **errmsg, char *a, char *b)
+{
+	if (obj != NULL)
+	{
+		if (bibtex_get_field_str(obj, a) || bibtex_get_field_str(obj, b))
+		{
+			*errmsg = safe_strcat(5, bibtex_entry_str(obj->type), " requires either ", a, " or ", b);
+			bibtex_free(obj);
+			obj = NULL;
+		}
+	}
+	return obj;
+}
+
+struct bibtex_object *
+require_fields(struct bibtex_object *obj, char **errmsg, int num, ...)
+{
+	if (obj != NULL)
+	{
+		va_list ap;
+		va_start(ap, num);
+		for(int i = 0; i<num; i++){
+			char *p = va_arg(ap, char *);
+			printf("Checking for the %s field\n", p);
+			if (bibtex_get_field_str(obj, p) == NULL){
+				*errmsg = safe_strcat(4, bibtex_entry_str(obj->type), " requires the ", p, " field");
+				bibtex_free(obj);
+				obj = NULL;
+				break;
+			}
+		}
+		va_end(ap);
+	}
+	return obj;
+}
+
+
+struct bibtex_object *
 bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 {
+	printf("Going to parse bibtex from FILE %p\n", (void *)istream);
 	struct bibtex_object *obj = safe_malloc(sizeof(struct bibtex_object));
 	struct bibtex_entry *current;
 	char buf[BUFSIZE+1];
@@ -243,6 +283,7 @@ bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 	//Read @
 	if (c != '@')
 		EXPECT(c, "'@'");
+	printf("Parsed @\n");
 
 	//Read entrytype
 	while (isalpha(c = fgetc(istream)) && bufloc < BUFSIZE)
@@ -253,6 +294,7 @@ bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 		bibtex_free(obj);
 		return NULL;
 	}
+	printf("Parsed entry type: %d: %s\n", obj->type, bibtex_entry_str(obj->type));
 
 	//Read openbrace
 	if (c != '{')
@@ -271,6 +313,7 @@ bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 		return NULL;
 	}
 	obj->identifier = safe_strdup(buf);
+	printf("Parsed identifier: %s\n", obj->identifier);
 	
 	//Skip whitespace
 	SKIP_WHITE(c, istream);
@@ -342,6 +385,7 @@ bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 		SKIP_WHITE(c, istream);
 
 		current->value = safe_strdup(buf);
+		printf("Parsed: %s=%s\n", bibtex_field_str(current->field, current->key), current->value);
 		current->next = NULL;
 		if (obj->head == NULL){
 			obj->head = current;
@@ -355,68 +399,41 @@ bibtex_parse(FILE *istream, char **errmsg, bool check_fields)
 	if (c != '}')
 		EXPECT(c, "}");
 	
-#define REQUIRE_EITHER(s1, s2)\
-	if (bibtex_get_field_str(obj, s1) == NULL ||\
-			bibtex_get_field_str(obj, s2) == NULL){\
-		*errmsg = safe_strcat(6, bibtex_entry_str(obj->type), " requires either ", s1, "or", s2, "\n");\
-		bibtex_free(obj);\
-		return NULL;\
-	}
-#define REQUIRE_FIELD(s)\
-	if (bibtex_get_field_str(obj, s) == NULL){\
-		*errmsg = safe_strcat(4, bibtex_entry_str(obj->type), " requires the ", s, " field");\
-		bibtex_free(obj);\
-		return NULL;\
-	}
+	printf("Done parsing\n");
 	if (check_fields){
 		switch (obj->type){
 		case BIBTEX_ENTRY_ARTICLE:
-			REQUIRE_FIELD("author");
-			REQUIRE_FIELD("title");
-			REQUIRE_FIELD("journal");
-			REQUIRE_FIELD("year");
+			obj = require_fields(obj, errmsg, 4, "author", "title", "journal", "year");
 			break;
 		case BIBTEX_ENTRY_BOOK:
-			REQUIRE_EITHER("author", "editor");
-			REQUIRE_FIELD("publisher");
-			REQUIRE_FIELD("year");
+			obj = require_either(obj, errmsg, "author", "editor");
+			obj = require_fields(obj, errmsg, 2, "publisher", "year");
 		case BIBTEX_ENTRY_BOOKLET:
 		case BIBTEX_ENTRY_MANUAL:
-			REQUIRE_FIELD("title");
+			obj = require_fields(obj, errmsg, 2, "title", "year");
 			break;
 		case BIBTEX_ENTRY_INBOOK:
-			REQUIRE_EITHER("author", "editor");
-			REQUIRE_EITHER("chapter", "pages");
-			REQUIRE_FIELD("title");
-			REQUIRE_FIELD("publisher");
-			REQUIRE_FIELD("year");
+			obj = require_either(obj, errmsg, "author", "editor");
+			obj = require_either(obj, errmsg, "chapter", "pages");
+			obj = require_fields(obj, errmsg, 3, "title", "publisher", "year");
 			break;
 		case BIBTEX_ENTRY_INCOLLECTION:
-			REQUIRE_FIELD("publisher");
+			obj = require_fields(obj, errmsg, 1, "publisher");
 		case BIBTEX_ENTRY_CONFERENCE:
 		case BIBTEX_ENTRY_INPROCEEDINGS:
-			REQUIRE_FIELD("author");
-			REQUIRE_FIELD("title");
-			REQUIRE_FIELD("booktitle");
-			REQUIRE_FIELD("year");
+			obj = require_fields(obj, errmsg, 4, "author", "title", "booktitle", "year");
 			break;
 		case BIBTEX_ENTRY_MASTERSTHESIS:
 		case BIBTEX_ENTRY_PHDTHESIS:
-			REQUIRE_FIELD("author");
-			REQUIRE_FIELD("school");
+			obj = require_fields(obj, errmsg, 2, "author", "school");
 		case BIBTEX_ENTRY_PROCEEDINGS:
-			REQUIRE_FIELD("title");
-			REQUIRE_FIELD("year");
+			obj = require_fields(obj, errmsg, 2, "title", "year");
 			break;
 		case BIBTEX_ENTRY_TECHREPORT:
-			REQUIRE_FIELD("author");
-			REQUIRE_FIELD("title");
-			REQUIRE_FIELD("institution");
-			REQUIRE_FIELD("year");
+			obj = require_fields(obj, errmsg, 4, "author", "title", "institution", "year");
 			break;
 		case BIBTEX_ENTRY_UNPUBLISHED:
-			REQUIRE_FIELD("title");
-			REQUIRE_FIELD("note");
+			obj = require_fields(obj, errmsg, 2, "title", "note");
 			break;
 		default:;
 		}
