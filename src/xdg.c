@@ -1,5 +1,5 @@
-#include <stdlib.h> 
-#include <string.h> 
+#include <stdlib.h>
+#include <string.h>
 
 #include "misc.h"
 #include "log.h"
@@ -32,11 +32,12 @@ static char *safe_getenv(char *env, char *def)
 char *get_config_path()
 {
 	char *cf;
-   
+
 	/* Check user xdg config file */
 	btd_log(2, "Checking XDG_CONFIG_HOME/btd/config\n");
 	if ((cf = get_file_if_exist(
-		safe_getenv("XDG_CONFIG_HOME", "~/.config"), "/btd/config")) != NULL){
+		safe_getenv("XDG_CONFIG_HOME", "~/.config"),
+			"/btd/config")) != NULL){
 		btd_log(2, "Found!\n");
 		return cf;
 	}
@@ -53,7 +54,7 @@ char *get_config_path()
 			return cf;
 		}
 	}
-	
+
 	/* No config file found */
 	die("No config file found...\n");
 	free(spaths);

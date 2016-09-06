@@ -35,6 +35,11 @@ static int parse_num_escape(FILE *fp, int maxlen, int base, int (*comp)(int))
 	return c;
 }
 
+static int isodigit(int i)
+{
+	return isdigit(i) && i != '9' && i != '8';
+}
+
 char *parse_str(FILE *stream)
 {
 	int position = 0, size = 32;
@@ -43,7 +48,7 @@ char *parse_str(FILE *stream)
 	skip_white(stream);
 	while ((c = fgetc(stream)) != EOF && !isspace(c)){
 		if (c == EOF)
-			break;	
+			break;
 
 		if (c == '\\'){
 			if((c = fgetc(stream)) == 'a')
@@ -61,7 +66,7 @@ char *parse_str(FILE *stream)
 			else if(c == 'v')
 				c = '\v';
 			else if(c == '0')
-				c = parse_num_escape(stream, 3, 8, isdigit);
+				c = parse_num_escape(stream, 3, 8, isodigit);
 			else if(c == 'x')
 				c = parse_num_escape(stream, 2, 16, isxdigit);
 		}

@@ -22,8 +22,8 @@ void btd_log(int lvl, char *msg, ...)
 {
 	va_list ap;
 	va_start(ap, msg);
- 	if(lvl <= btd_log_level)
-		vprintf(msg, ap);  
+	if (lvl <= btd_log_level)
+		vprintf(msg, ap);
 	va_end(ap);
 }
 

@@ -62,10 +62,11 @@ void sig_handler(int signo)
 int connection_handler(int fd)
 {
 	char *cmd = NULL;
-	FILE *stream = fdopen(fd, "r+");
+	FILE *stream = fdopen(fd, "w+");
 	if (stream == NULL)
 		perrordie("fdopen");
 	safe_fprintf(stream, "btd %s\n", VERSION);
+	setbuf(stream, NULL);
 
 	while (true) {
 		free(cmd);
@@ -76,18 +77,20 @@ int connection_handler(int fd)
 			char *errmsg = NULL;
 			char *path = parse_str(stream);
 			btd_log(2, "path parsed: %s\n", path);
-			struct bibtex_object *obj =\
-				bibtex_parse(stream, &errmsg, config->check_fields);
+			struct bibtex_object *obj = bibtex_parse(
+				stream, &errmsg, config->check_fields);
+			btd_log(2, "bibtex parsed: %p\n", (void *)obj);
 			if (obj == NULL){
-				safe_fprintf(stream, "1\nParsing failed: %s\n", errmsg);
-				free(errmsg);
+				safe_fprintf(stream,
+					"1\nParsing failed: %s\n", errmsg);
 			} else {
 				int id = db_add_bibtex(obj, path);
 				bibtex_free(obj);
-				safe_fprintf(stream, "0\nAdded with id: %d\n", id);
-				free(errmsg);
+				safe_fprintf(stream,
+					"0\nAdded with id: %d\n", id);
 			}
 			free(path);
+			free(errmsg);
 		} else if (strcasecmp("num", cmd) == 0){
 			safe_fprintf(stream, "0\n%d\n", db_num());
 		} else if (strcasecmp("show", cmd) == 0){
@@ -95,23 +98,26 @@ int connection_handler(int fd)
 			if (parse_llint(stream, &num)){
 				char *bibtex_str = db_get(num);
 				if (bibtex_str == NULL){
-					fputs("1\nNumber not a valid ID\n", stream);
+					safe_fputs(stream,
+						"1\nNumber not a valid ID\n");
 				} else {
-					safe_fprintf(stream, "0\n%s\n", bibtex_str);
+					safe_fprintf(stream,
+						"0\n%s\n", bibtex_str);
 					free(bibtex_str);
 				}
 			}
 		} else if (strcasecmp("attach", cmd) == 0){
 			char *fn = parse_str(stream);
 			long int num, length;
-			if (parse_llint(stream, &num) && parse_llint(stream, &length))
+			if (parse_llint(stream, &num) &&
+					parse_llint(stream, &length))
 				db_attach(fn, num, length, stream);
 			free(fn);
 		} else if (strcasecmp("list", cmd) == 0){
-			fputs("0\n", stream);
+			safe_fputs(stream, "0\n");
 			db_list(stream);
 		} else if (strcasecmp("bye", cmd) == 0 || strlen(cmd) == 0){
-			fputs("0\nbye\n", stream);
+			safe_fputs(stream, "0\nbye\n");
 			break;
 		} else if (strcasecmp("help", cmd) == 0){
 			safe_fprintf(stream, "0\n%s\n", PROCOTOLUSAGE);
@@ -161,7 +167,8 @@ int main(int argc, char **argv)
 		char *t = pprint_address(r);
 		btd_log(0, "Trying to connect to: %s\n", t);
 		free(t);
-		socket_fd = socket(r->ai_family, r->ai_socktype, r->ai_protocol);
+		socket_fd = socket(
+			r->ai_family, r->ai_socktype, r->ai_protocol);
 
 		if (socket_fd < 0){
 			perror("socket");
@@ -178,14 +185,15 @@ int main(int argc, char **argv)
 				perrordie("listen");
 			btd_log(2, "Listening to socket\n");
 			btd_log(1, "Waiting for a client to connect\n");
-			while ((connection_fd = accept(socket_fd, 
+			while ((connection_fd = accept(socket_fd,
 					r->ai_addr, &r->ai_addrlen)) > -1) {
 				btd_log(1, "Client connected...\n");
 				if (config->multithread){
 					if (fork() == 0)
-						return connection_handler(connection_fd);
+						return connection_handler(
+							connection_fd);
 				} else {
-					return connection_handler(connection_fd);
+					connection_handler(connection_fd);
 				}
 				close(connection_fd);
 			}

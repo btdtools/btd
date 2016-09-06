@@ -52,7 +52,7 @@ static error_t parse_opt (int key, char *arg, struct argp_state *state)
 }
 
 static struct argp argp = {
-	.options=options, 
+	.options=options,
 	.parser=parse_opt,
 	.args_doc=args_doc,
 	.doc=doc,
@@ -70,14 +70,16 @@ static void free_config_socket(struct btd_config *config)
 static void create_unixsocket(struct btd_config *config, char *path)
 {
 	if (strlen(path) > 108){
-		btd_log(0, "Path is too long(%lu), UNIX socket can be 108 max\n",
+		btd_log(0,
+			"Path is too long(%lu), UNIX socket can be 108 max\n",
 			strlen(path));
 		die("Socket creation failed\n");
 	}
 	char *sa = resolve_tilde(path);
 
-	config->socket = (struct addrinfo *)safe_malloc(sizeof(struct addrinfo));
-    memset(config->socket, 0, sizeof(struct addrinfo));
+	config->socket = (struct addrinfo *)safe_malloc(
+		sizeof(struct addrinfo));
+	memset(config->socket, 0, sizeof(struct addrinfo));
 	config->socket->ai_family = AF_UNIX;
 	config->socket->ai_socktype = SOCK_STREAM;
 	config->socket->ai_protocol = 0;
@@ -118,9 +120,9 @@ void update_config(struct btd_config *config, char *key, char *value){
 	if (strlen(value) == 0)
 		return;
 
-	/* Configuration options */
+	/* Configuration options TODO fix coding style*/
 	if (strcmp(key, "socket") == 0){
-		free_config_socket(config);	
+		free_config_socket(config);
 		int portindex = -1;
 		for (int i = strlen(value)-1; i>=0; i--){
 			if (value[i] == ':'){
@@ -129,14 +131,15 @@ void update_config(struct btd_config *config, char *key, char *value){
 				if (value+i+1 != end){
 					portindex = i+1;
 					value[i] = '\0';
-					btd_log(2, "Found port spec: %s\n", value+portindex);
+					btd_log(2, "Found port spec: %s\n",
+						value+portindex);
 					if (value[0] == '[' && value[strlen(value)-1] == ']'){
 						btd_log(2, "Stripping ipv6 square braces\n");
 						value = value+1;
 						value[strlen(value)-1] = '\0';
 					}
 					break;
-				} 
+				}
 			}
 		}
 		struct addrinfo hints;
@@ -150,16 +153,20 @@ void update_config(struct btd_config *config, char *key, char *value){
 
 		btd_log(2, "Address without port: %s\n", value);
 		if (portindex == -1){
-			btd_log(2, "no port found so treating it as a unix socket\n");
+			btd_log(2, "no port found so treating it "
+				"as a unix socket\n");
 			create_unixsocket(config, value);
 		} else {
-			if((s = getaddrinfo(value, value+portindex, &hints, &result)) != 0) {
+			if((s = getaddrinfo(value, value+portindex,
+					&hints, &result)) != 0) {
 				btd_log(2, "getaddrinfo returned %s, "
-					"treating it as an unix socket\n", gai_strerror(s));
+					"treating it as an unix socket\n",
+					gai_strerror(s));
 				value[portindex-1] = ':';
 				create_unixsocket(config, value);
 			} else {
-				btd_log(2, "Succesfully parsed ipv4 or ipv6 addresses\n");
+				btd_log(2, "Succesfully parsed ipv4 "
+					"or ipv6 addresses\n");
 				config->socket = result;
 			}
 		}
@@ -195,11 +202,12 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 	config->pidfile = safe_strdup("");
 
 	argp_parse(&argp, argc, argv, 0, 0, config);
-	btd_log(2, "Arguments parsed. Loglevel set to %d\n", get_btd_log_level());
+	btd_log(2, "Arguments parsed. Loglevel set to %d\n",
+		get_btd_log_level());
 
-	if (config->configpath == NULL){
+	if (config->configpath == NULL)
 		config->configpath = get_config_path();
-	}
+
 	config->datadir = get_data_path();
 	key = safe_strcat(2, config->datadir, "/btd.socket");
 	create_unixsocket(config, key);
@@ -229,7 +237,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 
 void btd_config_print(struct btd_config *config, FILE *fp)
 {
-	safe_fprintf(fp, 
+	safe_fprintf(fp,
 		"BTD Config digest\n"
 		"-----------------\n"
 		"configpath: '%s'\n"

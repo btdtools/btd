@@ -21,7 +21,7 @@ void die(char *msg, ...)
 {
 	va_list ap;
 	va_start(ap, msg);
-   	vfprintf(stderr, msg, ap);
+	vfprintf(stderr, msg, ap);
 	va_end(ap);
 	exit(EXIT_FAILURE);
 }
@@ -126,7 +126,8 @@ char *resolve_tilde(const char *path) {
 		die("glob failed\n");
 	} else {
 		head = globbuf.gl_pathv[0];
-		result = calloc(strlen(head) + (tail ? strlen(tail) : 0) + 1, 1);
+		result = calloc(strlen(head) +
+			(tail ? strlen(tail) : 0) + 1, 1);
 		strncpy(result, head, strlen(head));
 		if (tail)
 			strncat(result, tail, strlen(tail));
@@ -143,22 +144,22 @@ char *pprint_address(struct addrinfo *ai)
 	struct sockaddr_in *inadr;
 	struct sockaddr_in6 *in6adr;
 	switch (ai->ai_family){
-		case AF_UNIX:
-			sprintf(r, "Unix domain socket: %s", ai->ai_addr->sa_data);
-			break;
-		case AF_INET:
-			inadr = (struct sockaddr_in*)ai->ai_addr;
-			sprintf(r, "TCP(ipv4): %s:%d",
-				inet_ntoa(inadr->sin_addr), ntohs(inadr->sin_port));
-			break;
-		case AF_INET6:
-			in6adr = (struct sockaddr_in6*)ai->ai_addr;
-			sprintf(r, "TCP(ipv6): [%s]:%d",
-				in6adr->sin6_addr.s6_addr, ntohs(in6adr->sin6_port));
-			break;
-		default:
-			sprintf(r, "Unknown socket type: %d", ai->ai_family);
-			break;
+	case AF_UNIX:
+		sprintf(r, "Unix domain socket: %s", ai->ai_addr->sa_data);
+		break;
+	case AF_INET:
+		inadr = (struct sockaddr_in*)ai->ai_addr;
+		sprintf(r, "TCP(ipv4): %s:%d",
+			inet_ntoa(inadr->sin_addr), ntohs(inadr->sin_port));
+		break;
+	case AF_INET6:
+		in6adr = (struct sockaddr_in6*)ai->ai_addr;
+		sprintf(r, "TCP(ipv6): [%s]:%d",
+			in6adr->sin6_addr.s6_addr, ntohs(in6adr->sin6_port));
+		break;
+	default:
+		sprintf(r, "Unknown socket type: %d", ai->ai_family);
+		break;
 	}
 	return r;
 }
