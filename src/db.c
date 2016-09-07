@@ -22,15 +22,15 @@ char *sqlite_create_data_table =
 	"(name TEXT, author TEXT, path TEXT, datecreated TEXT, bibtex TEXT);";
 char *sqlite_create_file_table =
 	"CREATE TABLE IF NOT EXISTS files"
-	"(data INTEGER, path TEXT, uuid TEXT);";
+	"(data INTEGER, path TEXT, datecreated TEXT, uuid TEXT);";
 char *sqlite_add_datarow =
 	"INSERT INTO data "
 	"(name, author, path, datecreated, bibtex)"
 	"VALUES (?, ?, ?, date('now'), ?);";
 char *sqlite_add_filerow =
 	"INSERT INTO files "
-	"(data, path, uuid)"
-	"VALUES (?, ?, ?);";
+	"(data, path, uuid, datecreated)"
+	"VALUES (?, ?, ?, date('now'));";
 
 struct btd_config *config;
 sqlite3 *db;
@@ -209,42 +209,91 @@ char *db_get(long int id)
 	return l;
 }
 
-static int db_list_cb(void *nu, int argc, char **argv, char **cname)
+char *dot_shorten(const unsigned char *c, size_t len)
 {
-	FILE *fd = (FILE *)nu;
-	/* Cut off entries longer than 10 chars */
-	for (int i = 0; i<4; i++)
-		if (strlen(argv[i]) > 10)
-			strcpy(argv[i]+strlen(argv[i])-4, "...");
-
-	/* Cut off entries longer than 20 chars */
-	for (int i = 4; i<6; i++)
-		if (strlen(argv[i]) > 20)
-			strcpy(argv[i]+strlen(argv[i])-4, "...");
-
-	safe_fprintf(fd, "%s\t%s\t%s\t%s\t%s\t%s\n",
-		argv[0], argv[1], argv[2], argv[3], argv[4], argv[5]);
-	return 0;
-	(void)argc;
-	(void)cname;
+	char *r = (char *)c;
+	if(strlen(r) > len)
+		strcpy(r+len-4, "...");
+	return r;
 }
 
 void db_list(FILE *fd)
 {
+	int rc;
 	safe_fputs(fd, "id\tname\tauthor\tpath\tdate\tbibtex\n");
-	sqlite_query(sqlite3_exec(db, "SELECT rowid, name, author, path, date"
-		"created, bibtex FROM data", db_list_cb, fd, &sqlite_currerr));
+	sqlite_query(sqlite3_prepare_v2(db,
+		"SELECT rowid, name, author, path, date"
+		"created, bibtex FROM data", -1, &stmt, 0));
+	while ((rc = sqlite3_step(stmt)) == SQLITE_ROW){
+		safe_fprintf(fd, "%lld\t%s\t%s\t%s\t%s\t%s\n",
+			sqlite3_column_int64(stmt, 0),
+			dot_shorten(sqlite3_column_text(stmt, 1), 10),
+			dot_shorten(sqlite3_column_text(stmt, 2), 10),
+			dot_shorten(sqlite3_column_text(stmt, 3), 10),
+			dot_shorten(sqlite3_column_text(stmt, 4), 10),
+			dot_shorten(sqlite3_column_text(stmt, 5), 20));
+	}
+	sqlite_errcheck(rc, SQLITE_DONE);
+
+	btd_log(2, "Finalize\n");
+	sqlite_query(sqlite3_finalize(stmt));
 }
 
-void db_detach(long int id)
+void db_list_files(FILE *fd, long int id)
 {
-	btd_log(2, "Removing file with id: %d\n", id);
+	struct stat b;
+	char *bt;
+	safe_fputs(fd, "id\tpath\tdatecreated\tsize\n");
+	btd_log(2, "Listing files for %d\n", id);
+	sqlite_query(sqlite3_prepare_v2(db,
+		"SELECT rowid, path, datecreated, uuid "
+		"FROM files WHERE data=?", -1, &stmt, 0));
+
+	btd_log(2, "Binding dataid\n");
+	sqlite_query(sqlite3_bind_int64(stmt, 1, id));
+
+	btd_log(2, "Step\n");
+	while (sqlite3_step(stmt) == SQLITE_ROW){
+		bt = safe_strcat(2,
+			config->filesdir, sqlite3_column_text(stmt, 3));
+		stat(bt, &b);
+		btd_log(2, "Row retrieved\n");
+		fprintf(fd, "%lld\t%s\t%s\t%ld\n",
+			sqlite3_column_int64(stmt, 0),
+			sqlite3_column_text(stmt, 1),
+			sqlite3_column_text(stmt, 2),
+			b.st_size);
+		free(bt);
+	}
+
+	btd_log(2, "Finalize\n");
+	sqlite_query(sqlite3_finalize(stmt));
 }
 
+void db_detach(long int id, FILE *fd)
+{
+	btd_log(2, "Trying to find file with %ld\n", id);
+	sqlite_query(sqlite3_prepare_v2(db,
+		"DELETE FROM files WHERE rowid=?", -1, &stmt, 0));
+
+	btd_log(2, "Binding dataid\n");
+	sqlite_query(sqlite3_bind_int64(stmt, 1, id));
+
+	btd_log(2, "Step\n");
+	sqlite_errcheck(sqlite3_step(stmt), SQLITE_DONE);
+
+	btd_log(2, "Finalize\n");
+	sqlite_query(sqlite3_finalize(stmt));
+
+	if(sqlite3_changes(db) > 0)
+		safe_fputs(fd, "0\n");
+	else
+		safe_fprintf(fd, "1\nThere is no file with id %ld\n", id);
+}
 
 void db_attach(char *fn, long int id, long int length, FILE *fd)
 {
-	char c, *bt = db_get(id), ustr[37], ids[40];
+	char c, *bt = db_get(id), ustr[37];
 	uuid_t uuid;
 	if (bt == NULL){
 		safe_fprintf(fd, "1\nNot a valid id\n");
@@ -257,18 +306,16 @@ void db_attach(char *fn, long int id, long int length, FILE *fd)
 		sqlite_query(sqlite3_prepare_v2(
 			db, sqlite_add_filerow, -1, &stmt, 0));
 
-		sprintf(ids, "%ld", id);
 		btd_log(2, "Binding dataid\n");
-		sqlite_query(sqlite3_bind_text(
-			stmt, 1, ids, strlen(ids), SQLITE_STATIC));
-
-		btd_log(2, "Binding uuid\n");
-		sqlite_query(sqlite3_bind_text(
-			stmt, 2, ustr, strlen(ustr), SQLITE_STATIC));
+		sqlite_query(sqlite3_bind_int64(stmt, 1, id));
 
 		btd_log(2, "Binding path\n");
 		sqlite_query(sqlite3_bind_text(
-			stmt, 3, fn, strlen(fn), SQLITE_STATIC));
+			stmt, 2, fn, strlen(fn), SQLITE_STATIC));
+
+		btd_log(2, "Binding uuid\n");
+		sqlite_query(sqlite3_bind_text(
+			stmt, 3, ustr, strlen(ustr), SQLITE_STATIC));
 
 		btd_log(2, "Step\n");
 		sqlite_errcheck(sqlite3_step(stmt), SQLITE_DONE);
@@ -283,7 +330,7 @@ void db_attach(char *fn, long int id, long int length, FILE *fd)
 		safe_fclose(f);
 		if(length > 0){
 			btd_log(1, "Early EOF in file data?\n");
-			db_detach(sqlite3_last_insert_rowid(db));
+			db_detach(sqlite3_last_insert_rowid(db), fd);
 		}
 		free(bt);
 	}

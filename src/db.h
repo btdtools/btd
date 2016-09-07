@@ -16,10 +16,16 @@ int db_num();
 char *db_get(long int id);
 
 /* Print a list of bibtex snippets */
-void *db_list(FILE *fd);
+void db_list(FILE *fd);
+
+/* Print the attached files for an entry */
+void db_list_files(FILE *fd, long int id);
 
 /* Attach a file to an entry */
 void db_attach(char *fn, int id, size_t length, FILE *fd);
+
+/* Detach a file and remove */
+void db_detach(long int id, FILE *fd);
 
 /* Close and commit database and filesystem */
 void db_close();

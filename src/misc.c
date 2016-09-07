@@ -34,6 +34,15 @@ void *safe_malloc(unsigned long int s)
 	return r;
 }
 
+void safe_free(int count, ...)
+{
+	va_list ap;
+	va_start(ap, count);
+	for (int i = 0; i<count; i++)
+		free(va_arg(ap, void *));
+	va_end(ap);
+}
+
 void *safe_realloc(void *p, unsigned long int s)
 {
 	if ((p = realloc(p, s)) == NULL)

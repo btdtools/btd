@@ -25,6 +25,7 @@ char *PROCOTOLUSAGE =\
   ""\
   "Command Args         Info\n"\
   "ATTACH  NAME ID LEN  Attach a file with name NAME to ID with LEN bytes.\n"\
+  "FILES ID             Show attached files for ID\n"\
   "BYE                  Close the connection gracefully.\n"\
   "NUM                  Print the number of entries available.\n"\
   "SHOW    ID           Show the snippet matching ID.\n"\
@@ -105,7 +106,17 @@ int connection_handler(int fd)
 						"0\n%s\n", bibtex_str);
 					free(bibtex_str);
 				}
+			} else {
+				safe_fputs(stream,
+					"1\nArgument is not a number");
 			}
+		} else if (strcasecmp("detach", cmd) == 0){
+			long int num;
+			if (parse_llint(stream, &num))
+				db_detach(num, stream);
+			else
+				safe_fputs(stream,
+					"1\nArgument is not a number");
 		} else if (strcasecmp("attach", cmd) == 0){
 			char *fn = parse_str(stream);
 			long int num, length;
@@ -116,6 +127,16 @@ int connection_handler(int fd)
 		} else if (strcasecmp("list", cmd) == 0){
 			safe_fputs(stream, "0\n");
 			db_list(stream);
+		} else if (strcasecmp("files", cmd) == 0){
+			long int num;
+			if (parse_llint(stream, &num)){
+				btd_log(2, "Getting files for %d\n", num);
+				safe_fputs(stream, "0\n");
+				db_list_files(stream, num);
+			} else {
+				safe_fputs(stream,
+					"1\nArgument is not a number");
+			}
 		} else if (strcasecmp("bye", cmd) == 0 || strlen(cmd) == 0){
 			safe_fputs(stream, "0\nbye\n");
 			break;

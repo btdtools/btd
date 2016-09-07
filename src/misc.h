@@ -12,6 +12,7 @@ void die(char *msg, ...);
 void *safe_realloc(void *p, unsigned long int s);
 void *safe_calloc(unsigned long int nm, unsigned long int s);
 void *safe_malloc(unsigned long int s);
+void safe_free(int count, ...);
 FILE *safe_fopen(char *p, char *mode);
 void safe_fclose(FILE *f);
 char *safe_strcat(int count, ...);
