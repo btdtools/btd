@@ -36,7 +36,8 @@ When no data directory exists `btd` will store the data in
 MIT Licence, see `LICENSE` file
 
 ### Hacking
-We try to adhere to Linux Kernel Coding style.
+We try to adhere to Linux Kernel Coding style. For a full spec of the protocol
+send the command `HELP` to a running daemon.
 
 ### Author(s)
 Mart Lubbers
