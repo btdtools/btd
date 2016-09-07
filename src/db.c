@@ -155,7 +155,8 @@ void db_init(struct btd_config *cfg)
 	btd_log(2, "Filesystem initialized\n");
 
 	btd_log(2, "Opening db at: '%s'\n", config->db);
-	sqlite_query(sqlite3_open(config->db, &db));
+	sqlite_query(sqlite3_open_v2(config->db, &db,
+		SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX , NULL));
 
 	btd_log(2, "Grabbing and/or creating version table\n");
 	sqlite_query(sqlite3_exec(
