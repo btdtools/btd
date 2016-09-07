@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <uuid/uuid.h>
 
@@ -274,6 +275,29 @@ void db_detach(long int id, FILE *fd)
 {
 	btd_log(2, "Trying to find file with %ld\n", id);
 	sqlite_query(sqlite3_prepare_v2(db,
+		"SELECT uuid FROM files WHERE rowid=?", -1, &stmt, 0));
+
+	btd_log(2, "Binding dataid\n");
+	sqlite_query(sqlite3_bind_int64(stmt, 1, id));
+
+	btd_log(2, "Step\n");
+	int rc = sqlite3_step(stmt);
+	char uuid[37];
+	if (rc == SQLITE_ROW) {
+		memcpy(uuid, sqlite3_column_text(stmt, 0), 37);
+	} else if (rc == SQLITE_DONE) {
+		safe_fprintf(fd, "1\nNo file with id %d\n", id);
+		return;
+	} else {
+		safe_fprintf(stderr, "SQLite error: %s\n", sqlite3_errmsg(db));
+		die("SQLite error: %d-%s\n", rc, sqlite_currerr);
+	}
+
+	btd_log(2, "Finalize\n");
+	sqlite_query(sqlite3_finalize(stmt));
+
+	btd_log(2, "Removing file from db\n");
+	sqlite_query(sqlite3_prepare_v2(db,
 		"DELETE FROM files WHERE rowid=?", -1, &stmt, 0));
 
 	btd_log(2, "Binding dataid\n");
@@ -285,10 +309,17 @@ void db_detach(long int id, FILE *fd)
 	btd_log(2, "Finalize\n");
 	sqlite_query(sqlite3_finalize(stmt));
 
-	if(sqlite3_changes(db) > 0)
+
+	char *bt = safe_strcat(2, config->filesdir, uuid);
+	if (unlink(bt) == -1) {
+		safe_fputs(fd,
+			"1\nSomething went wrong removing the actual file\n");
+		btd_log(2, "Something went wrong removing the file: %s\n",
+			strerror(errno));
+	} else {
 		safe_fputs(fd, "0\n");
-	else
-		safe_fprintf(fd, "1\nThere is no file with id %ld\n", id);
+	}
+	free(bt);
 }
 
 void db_attach(char *fn, long int id, long int length, FILE *fd)
