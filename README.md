@@ -37,11 +37,10 @@ For the full description of the protocol say `help` to a running daemon or read
 the help file [here](PROTOCOL.txt).
 
 ### LICENSE
-MIT Licence, see `LICENSE` file
+MIT License, see [LICENCE](LICENCE)
 
 ### Hacking
-We try to adhere to Linux Kernel Coding style. For a full spec of the protocol
-send the command `HELP` to a running daemon.
+We try to adhere to Linux Kernel Coding style.
 
 ### Author(s)
 Mart Lubbers
