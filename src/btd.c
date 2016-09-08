@@ -15,25 +15,9 @@
 #include "log.h"
 #include "db.h"
 #include "bibtex.h"
+#include "doc.h"
 
 #define MAXCMDLEN 8
-
-char *PROCOTOLUSAGE =\
-  "Protocol specification:\n"\
-  "\n"\
-  "Commands are case insensitive and space has to be escaped with\\\n"\
-  ""\
-  "Command Args         Info\n"\
-  "ATTACH  NAME ID LEN  Attach a file with name NAME to ID with LEN bytes.\n"\
-  "FILES ID             Show attached files for ID\n"\
-  "BYE                  Close the connection gracefully.\n"\
-  "NUM                  Print the number of entries available.\n"\
-  "SHOW    ID           Show the snippet matching ID.\n"\
-  "LIST                 Print a summary.\n"\
-  "HELP                 Display this help.\n"\
-  "BIBTEX  DIR  SNIPPET Add a bibtex snippet to the database in\n"\
-  "                     directory DIR and use SNIPPET as the data.\n"\
-  "";
 
 struct btd_config *config;
 int socket_fd;
@@ -141,7 +125,7 @@ int connection_handler(int fd)
 			safe_fputs(stream, "0\nbye\n");
 			break;
 		} else if (strcasecmp("help", cmd) == 0){
-			safe_fprintf(stream, "0\n%s\n", PROCOTOLUSAGE);
+			safe_fprintf(stream, "0\n%s\n", protocol_doc);
 		} else {
 			safe_fprintf(stream, "1\nUnknown command: '%s'\n", cmd);
 		}

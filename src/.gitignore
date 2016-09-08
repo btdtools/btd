@@ -3,3 +3,4 @@ btdc
 btddb
 files
 *.o
+doc.h

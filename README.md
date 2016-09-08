@@ -32,6 +32,10 @@ checks whether the directory `$XDG_DATA_HOME/btd` or one of the components of
 When no data directory exists `btd` will store the data in
 `$XDG_DATA_HOME/btd`.
 
+#### Protocol description
+For the full description of the protocol say `help` to a running daemon or read
+the help file [here](PROTOCOL.md).
+
 ### LICENSE
 MIT Licence, see `LICENSE` file
 
