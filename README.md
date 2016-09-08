@@ -34,7 +34,7 @@ When no data directory exists `btd` will store the data in
 
 #### Protocol description
 For the full description of the protocol say `help` to a running daemon or read
-the help file [here](PROTOCOL.md).
+the help file [here](PROTOCOL.txt).
 
 ### LICENSE
 MIT Licence, see `LICENSE` file

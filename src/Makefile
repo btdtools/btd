@@ -8,7 +8,7 @@ LDLIBS=-lsqlite3 -luuid
 
 all: $(PROGRAM)
 
-doc.h: ../PROTOCOL.md
+doc.h: ../PROTOCOL.txt
 	echo -e "#ifndef DOC_H\n#define DOC_H\n\nconst char *protocol_doc =\\" > $@
 	sed -e 's/$$/\\n"\\/g' -e 's/^/\t"/g' $< >> $@
 	echo -e ";\n#endif" >> $@
