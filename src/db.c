@@ -51,22 +51,17 @@ static void sqlite_query(int got)
 	sqlite_errcheck(got, SQLITE_OK);
 }
 
-static int db_get_version_cb(void *nu, int argc, char **argv, char **cname)
-{
-	char **data = (char **)nu;
-	data[0] = safe_strdup(argv[0]);
-	data[1] = safe_strdup(argv[1]);
-	return 0;
-	(void)argc;
-	(void)cname;
-}
-
 static char **db_get_version()
 {
-	char **data = safe_malloc((sizeof(char*))*2);
-	sqlite_query(sqlite3_exec(db, "SELECT version, datecreated FROM config",
-		db_get_version_cb, data, &sqlite_currerr));
-	return data;
+	char **version = malloc(2*sizeof(char *));
+	sqlite_query(sqlite3_prepare_v2(db,
+		"SELECT version, datecreated FROM config", -1, &stmt, 0));
+
+	sqlite_errcheck(sqlite3_step(stmt), SQLITE_ROW);
+	version[0] = safe_strdup((char *)sqlite3_column_text(stmt, 0));
+	version[1] = safe_strdup((char *)sqlite3_column_text(stmt, 1));
+	sqlite3_finalize(stmt);
+	return version;
 }
 
 void db_convert(char *version)
@@ -88,24 +83,24 @@ int db_add_bibtex(struct bibtex_object *obj, char *path)
 
 	btd_log(2, "Adding bibtex entry: '%s'\n", print);
 	sqlite_query(sqlite3_prepare_v2(db, sqlite_add_datarow, -1,
-			&stmt, 0));
+		&stmt, 0));
 
 	btd_log(2, "Binding name\n");
 	sqlite_query(sqlite3_bind_text(stmt, 1, obj->identifier,
-			strlen(obj->identifier), SQLITE_STATIC));
+		strlen(obj->identifier), SQLITE_STATIC));
 
 	btd_log(2, "Binding author\n");
 	char *author = bibtex_get_author(obj);
 	sqlite_query(sqlite3_bind_text(stmt, 2, author,
-			strlen(author), SQLITE_STATIC));
+		strlen(author), SQLITE_STATIC));
 
 	btd_log(2, "Binding path\n");
 	sqlite_query(sqlite3_bind_text(stmt, 3, path,
-			strlen(path), SQLITE_STATIC));
+		strlen(path), SQLITE_STATIC));
 
 	btd_log(2, "Binding bibtex\n");
 	sqlite_query(sqlite3_bind_text(stmt, 4, print,
-			strlen(print), SQLITE_STATIC));
+		strlen(print), SQLITE_STATIC));
 
 	btd_log(2, "Step\n");
 	sqlite_errcheck(sqlite3_step(stmt), SQLITE_DONE);
@@ -155,8 +150,8 @@ void db_init(struct btd_config *cfg)
 	btd_log(2, "Filesystem initialized\n");
 
 	btd_log(2, "Opening db at: '%s'\n", config->db);
-	sqlite_query(sqlite3_open_v2(config->db, &db,
-		SQLITE_OPEN_READWRITE | SQLITE_OPEN_FULLMUTEX , NULL));
+	sqlite_query(sqlite3_open_v2(config->db, &db, SQLITE_OPEN_READWRITE |
+		SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX , NULL));
 
 	btd_log(2, "Grabbing and/or creating version table\n");
 	sqlite_query(sqlite3_exec(
@@ -179,20 +174,15 @@ void db_init(struct btd_config *cfg)
 	free(datever);
 }
 
-static int db_num_cb(void *nu, int argc, char **argv, char **cname)
-{
-	int *a = (int *)nu;
-	*a = atoi(argv[0]);
-	return 0;
-	(void)argc;
-	(void)cname;
-}
-
 int db_num()
 {
 	int num;
-	sqlite_query(sqlite3_exec(db, "SELECT Count(*) FROM data",
-			db_num_cb, &num, &sqlite_currerr));
+	sqlite_query(sqlite3_prepare_v2(
+		db, "SELECT Count(*) FROM data", -1, &stmt, 0));
+
+	sqlite_errcheck(sqlite3_step(stmt), SQLITE_ROW);
+	num = sqlite3_column_int(stmt, 0);
+	sqlite_query(sqlite3_finalize(stmt));
 	return num;
 }
 

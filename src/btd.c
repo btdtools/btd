@@ -84,7 +84,7 @@ int connection_handler(int fd)
 				char *bibtex_str = db_get(num);
 				if (bibtex_str == NULL){
 					safe_fputs(stream,
-						"1\nNumber not a valid ID\n");
+						"1\nNumber not a known ID\n");
 				} else {
 					safe_fprintf(stream,
 						"0\n%s\n", bibtex_str);
@@ -106,6 +106,9 @@ int connection_handler(int fd)
 			long int length;
 			if (parse_llint(stream, &length))
 				db_file_upload(fn, length, stream);
+			else
+				safe_fputs(stream,
+					"1\nArgument not a number");
 			free(fn);
 		} else if (strcasecmp("list", cmd) == 0){
 			safe_fputs(stream, "0\n");
