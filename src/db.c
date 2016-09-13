@@ -23,15 +23,15 @@ char *sqlite_create_data_table =
 	"(name TEXT, author TEXT, path TEXT, datecreated TEXT, bibtex TEXT);";
 char *sqlite_create_file_table =
 	"CREATE TABLE IF NOT EXISTS files"
-	"(data INTEGER, path TEXT, datecreated TEXT, uuid TEXT);";
+	"(path TEXT, datecreated TEXT, uuid TEXT);";
 char *sqlite_add_datarow =
 	"INSERT INTO data "
 	"(name, author, path, datecreated, bibtex)"
 	"VALUES (?, ?, ?, date('now'), ?);";
 char *sqlite_add_filerow =
 	"INSERT INTO files "
-	"(data, path, uuid, datecreated)"
-	"VALUES (?, ?, ?, date('now'));";
+	"(path, uuid, datecreated)"
+	"VALUES (?, ?, date('now'));";
 
 struct btd_config *config;
 sqlite3 *db;
@@ -241,18 +241,15 @@ void db_list(FILE *fd)
 	sqlite_query(sqlite3_finalize(stmt));
 }
 
-void db_list_files(FILE *fd, long int id)
+void db_file_list(FILE *fd)
 {
 	struct stat b;
 	char *bt;
 	safe_fputs(fd, "id\tpath\tdatecreated\tsize\n");
-	btd_log(2, "Listing files for %d\n", id);
-	sqlite_query(sqlite3_prepare_v2(db,
-		"SELECT rowid, path, datecreated, uuid "
-		"FROM files WHERE data=?", -1, &stmt, 0));
-
-	btd_log(2, "Binding dataid\n");
-	sqlite_query(sqlite3_bind_int64(stmt, 1, id));
+	btd_log(2, "Listing files\n");
+	sqlite_query(sqlite3_prepare_v2(db, 
+		"SELECT rowid, path, datecreated, uuid FROM files",
+		-1, &stmt, 0));
 
 	btd_log(2, "Step\n");
 	while (sqlite3_step(stmt) == SQLITE_ROW){
@@ -272,7 +269,7 @@ void db_list_files(FILE *fd, long int id)
 	sqlite_query(sqlite3_finalize(stmt));
 }
 
-void db_detach(long int id, FILE *fd)
+void db_file_remove(long int id, FILE *fd)
 {
 	btd_log(2, "Trying to find file with %ld\n", id);
 	sqlite_query(sqlite3_prepare_v2(db,
@@ -323,49 +320,43 @@ void db_detach(long int id, FILE *fd)
 	free(bt);
 }
 
-void db_attach(char *fn, long int id, long int length, FILE *fd)
+void db_file_upload(char *fn, long int length, FILE *fd)
 {
-	char c, *bt = db_get(id), ustr[37];
+	char c, ustr[37];
 	uuid_t uuid;
-	if (bt == NULL){
-		safe_fprintf(fd, "1\nNot a valid id\n");
-	} else {
-		free(bt);
-		uuid_generate_random(uuid);
-		uuid_unparse_lower(uuid, ustr);
 
-		btd_log(2, "Adding file entry with uuid: '%s'\n", ustr);
-		sqlite_query(sqlite3_prepare_v2(
-			db, sqlite_add_filerow, -1, &stmt, 0));
+	uuid_generate_random(uuid);
+	uuid_unparse_lower(uuid, ustr);
 
-		btd_log(2, "Binding dataid\n");
-		sqlite_query(sqlite3_bind_int64(stmt, 1, id));
+	btd_log(2, "Adding file entry with uuid: '%s'\n", ustr);
+	sqlite_query(sqlite3_prepare_v2(
+		db, sqlite_add_filerow, -1, &stmt, 0));
 
-		btd_log(2, "Binding path\n");
-		sqlite_query(sqlite3_bind_text(
-			stmt, 2, fn, strlen(fn), SQLITE_STATIC));
+	btd_log(2, "Binding path\n");
+	sqlite_query(sqlite3_bind_text(
+		stmt, 2, fn, strlen(fn), SQLITE_STATIC));
 
-		btd_log(2, "Binding uuid\n");
-		sqlite_query(sqlite3_bind_text(
-			stmt, 3, ustr, strlen(ustr), SQLITE_STATIC));
+	btd_log(2, "Binding uuid\n");
+	sqlite_query(sqlite3_bind_text(
+		stmt, 3, ustr, strlen(ustr), SQLITE_STATIC));
 
-		btd_log(2, "Step\n");
-		sqlite_errcheck(sqlite3_step(stmt), SQLITE_DONE);
+	btd_log(2, "Step\n");
+	sqlite_errcheck(sqlite3_step(stmt), SQLITE_DONE);
 
-		btd_log(2, "Finalize\n");
-		sqlite_query(sqlite3_finalize(stmt));
+	btd_log(2, "Finalize\n");
+	sqlite_query(sqlite3_finalize(stmt));
 
-		bt = safe_strcat(2, config->filesdir, ustr);
-		FILE *f = safe_fopen(bt, "w");
-		while((c = fgetc(fd)) != EOF && length-- > 0)
-			fputc(c, f);
-		safe_fclose(f);
-		if(length > 0){
-			btd_log(1, "Early EOF in file data?\n");
-			db_detach(sqlite3_last_insert_rowid(db), fd);
-		}
-		free(bt);
+	char *bt = safe_strcat(2, config->filesdir, ustr);
+	FILE *f = safe_fopen(bt, "w");
+	while((c = fgetc(fd)) != EOF && length-- > 0)
+		fputc(c, f);
+	safe_fclose(f);
+	if(length > 0){
+		btd_log(1, "Early EOF in file data?\n");
+		db_file_remove(sqlite3_last_insert_rowid(db), fd);
 	}
+	free(bt);
+	
 }
 
 void db_close()
