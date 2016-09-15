@@ -17,8 +17,6 @@
 #include "bibtex.h"
 #include "doc.h"
 
-#define MAXCMDLEN 8
-
 struct btd_config *config;
 int socket_fd;
 
