@@ -21,26 +21,26 @@
 # TCP ipv6           | [fe80::be5f:f4ff:fe1c:e60]:12345  |
 #                    | [::1]:1234                        | localhost 
 #socket = ./btd.socket
-#
-## Location of the database and files
+
+# Location of the database and files
 #datadir = ./data # some comment
-#
-## When not defined no pidfile is written
+
+# When not defined no pidfile is written
 #pidfile = ./btd.pid
+
+# Format in which to store files.
 #
-## Format in which to store files.
-##
-## Available shortcuts:
-## %entry  - http://newton.ex.ac.uk/tex/pack/bibtex/btxdoc/node7.html
-## %type   - http://newton.ex.ac.uk/tex/pack/bibtex/btxdoc/node6.html
-## %ext    - File extension
-## %%      - literal % (why would you want this?)
-##
-## If an entry is not available an empty string is used.
+# Available shortcuts:
+# %entry  - http://newton.ex.ac.uk/tex/pack/bibtex/btxdoc/node7.html
+# %type   - http://newton.ex.ac.uk/tex/pack/bibtex/btxdoc/node6.html
+# %ext    - File extension
+# %%      - literal % (why would you want this?)
+#
+# If an entry is not available an empty string is used.
 #filefmt = %year/%author - %title.%ext
-#
-## Flag to check wether the bibtex snippets have the complete specs
+
+# Flag to check wether the bibtex snippets have the complete specs
 #check_fields = false
-#
-## Flag to disable multithreading, only use this for debugging purposes.
+
+# Flag to disable multithreading, only use this for debugging purposes.
 multithread = false

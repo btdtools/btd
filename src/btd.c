@@ -17,8 +17,6 @@
 #include "bibtex.h"
 #include "doc.h"
 
-#define MAXCMDLEN 8
-
 struct btd_config *config;
 int socket_fd;
 
@@ -84,7 +82,7 @@ int connection_handler(int fd)
 				char *bibtex_str = db_get(num);
 				if (bibtex_str == NULL){
 					safe_fputs(stream,
-						"1\nNumber not a valid ID\n");
+						"1\nNumber not a known ID\n");
 				} else {
 					safe_fprintf(stream,
 						"0\n%s\n", bibtex_str);
@@ -97,30 +95,26 @@ int connection_handler(int fd)
 		} else if (strcasecmp("detach", cmd) == 0){
 			long int num;
 			if (parse_llint(stream, &num))
-				db_detach(num, stream);
+				db_file_remove(num, stream);
 			else
 				safe_fputs(stream,
 					"1\nArgument is not a number");
-		} else if (strcasecmp("attach", cmd) == 0){
+		} else if (strcasecmp("upload", cmd) == 0){
 			char *fn = parse_str(stream);
-			long int num, length;
-			if (parse_llint(stream, &num) &&
-					parse_llint(stream, &length))
-				db_attach(fn, num, length, stream);
+			long int length;
+			if (parse_llint(stream, &length))
+				db_file_upload(fn, length, stream);
+			else
+				safe_fputs(stream,
+					"1\nArgument not a number");
 			free(fn);
 		} else if (strcasecmp("list", cmd) == 0){
 			safe_fputs(stream, "0\n");
 			db_list(stream);
 		} else if (strcasecmp("files", cmd) == 0){
-			long int num;
-			if (parse_llint(stream, &num)){
-				btd_log(2, "Getting files for %d\n", num);
-				safe_fputs(stream, "0\n");
-				db_list_files(stream, num);
-			} else {
-				safe_fputs(stream,
-					"1\nArgument is not a number");
-			}
+			btd_log(2, "Getting files\n");
+			safe_fputs(stream, "0\n");
+			db_file_list(stream);
 		} else if (strcasecmp("bye", cmd) == 0 || strlen(cmd) == 0){
 			safe_fputs(stream, "0\nbye\n");
 			break;
