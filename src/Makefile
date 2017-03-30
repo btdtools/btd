@@ -14,7 +14,7 @@ doc.h: ../PROTOCOL.txt
 	echo -e ";\n#endif" >> $@
 
 $(PROGRAM): $(HEADERS) $(OBJS)
-	$(LINK.c) $(LDLIBS) $^ $(OUTPUT_OPTION)
+	$(LINK.c)$(LDLIBS) $^ $(OUTPUT_OPTION)
 
 clean:
 	$(RM) $(PROGRAM) $(OBJS) $(HEADERS)

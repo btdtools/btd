@@ -1,7 +1,8 @@
 Commands are case insensitive and space has to be escaped with
 
 Command Args          Info
-ATTACH  NAME ID LEN   Attach a file with name NAME to ID with LEN bytes.
+ATTACH NAME ID LEN    Attach a file with name NAME to ID with LEN bytes.
+DETACH ID             Remove the file with ID.
 FILES ID              Show attached files for ID.
 BYE                   Close the connection gracefully.
 NUM                   Print the number of entries available.
