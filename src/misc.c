@@ -10,6 +10,7 @@
 #include <netdb.h>
 
 #include "misc.h"
+#include "btd.h"
 
 void perrordie(char *prg)
 {
@@ -23,6 +24,7 @@ void die(char *msg, ...)
 	va_start(ap, msg);
 	vfprintf(stderr, msg, ap);
 	va_end(ap);
+	cleanup();
 	exit(EXIT_FAILURE);
 }
 

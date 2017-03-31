@@ -35,7 +35,7 @@ void cleanup()
 
 void sig_handler(int signo)
 {
-	if (signo == SIGINT || signo == SIGTERM){
+	if (signo == SIGINT || signo == SIGTERM || signo == SIGPIPE){
 		cleanup();
 		btd_log(0, "Signal %s caught\nQuitting...\n", strsignal(signo));
 		exit(EXIT_SUCCESS);
