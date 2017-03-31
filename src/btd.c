@@ -143,6 +143,8 @@ int main(int argc, char **argv)
 		perrordie("signal(SIGINT)");
 	if (signal(SIGTERM, sig_handler) == SIG_ERR)
 		perrordie("signal(SIGTERM)");
+	if (signal(SIGPIPE, sig_handler) == SIG_ERR)
+		perrordie("signal(SIGPIPE)");
 
 	/* Parse args and config */
 	config = safe_malloc(sizeof (struct btd_config));
