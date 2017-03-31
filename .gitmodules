@@ -1,0 +1,3 @@
+[submodule "libbtd"]
+	path = libbtd
+	url = https://github.com/btdtools/libbtd.git

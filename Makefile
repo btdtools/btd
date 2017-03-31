@@ -34,7 +34,7 @@ $(SRCDIR)/%:
 	make -C $(SRCDIR)
 
 $(BINDIR):
-	mkdir $@
+	mkdir -p $@
 
 clean:
 	$(RM) -rv $(BINDIR) 

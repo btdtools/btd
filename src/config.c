@@ -15,6 +15,7 @@
 #include "misc.h"
 #include "parse.h"
 #include "xdg.h"
+#include "libbtd.h"
 
 const char *argp_program_version = "btd 0.1";
 const char *argp_program_bug_address = "<mart@martlubbers.net>";
@@ -67,35 +68,6 @@ static void free_config_socket(struct btd_config *config)
 	freeaddrinfo(config->socket);
 }
 
-static void create_unixsocket(struct btd_config *config, char *path)
-{
-	if (strlen(path) > 108){
-		btd_log(0,
-			"Path is too long(%lu), UNIX socket can be 108 max\n",
-			strlen(path));
-		die("Socket creation failed\n");
-	}
-	char *sa = resolve_tilde(path);
-
-	config->socket = (struct addrinfo *)safe_malloc(
-		sizeof(struct addrinfo));
-	memset(config->socket, 0, sizeof(struct addrinfo));
-	config->socket->ai_family = AF_UNIX;
-	config->socket->ai_socktype = SOCK_STREAM;
-	config->socket->ai_protocol = 0;
-
-	/* Build address object */
-	config->socket->ai_addr = safe_malloc(sizeof(struct sockaddr_un));
-	memset(config->socket->ai_addr, 0, sizeof(struct sockaddr_un));
-	config->socket->ai_addr->sa_family = AF_UNIX;
-	strcpy(config->socket->ai_addr->sa_data, sa);
-
-	/* Register length */
-	config->socket->ai_addrlen = sizeof(struct sockaddr_un);
-
-	free(sa);
-}
-
 bool parse_boolean(char *value, char *name)
 {
 	if(strcmp(value, "true") != 0 && strcmp(value, "false") != 0)
@@ -120,56 +92,10 @@ void update_config(struct btd_config *config, char *key, char *value){
 	if (strlen(value) == 0)
 		return;
 
-	/* Configuration options TODO fix coding style*/
+	/* Configuration options */
 	if (strcmp(key, "socket") == 0){
 		free_config_socket(config);
-		int portindex = -1;
-		for (int i = strlen(value)-1; i>=0; i--){
-			if (value[i] == ':'){
-				char *end;
-				strtol(value+i+1, &end, 10);
-				if (value+i+1 != end){
-					portindex = i+1;
-					value[i] = '\0';
-					btd_log(2, "Found port spec: %s\n",
-						value+portindex);
-					if (value[0] == '[' && value[strlen(value)-1] == ']'){
-						btd_log(2, "Stripping ipv6 square braces\n");
-						value = value+1;
-						value[strlen(value)-1] = '\0';
-					}
-					break;
-				}
-			}
-		}
-		struct addrinfo hints;
-        struct addrinfo *result;
-		int s = 0;
-
-        memset(&hints, 0, sizeof(struct addrinfo));
-        hints.ai_family = AF_UNSPEC;
-        hints.ai_socktype = SOCK_STREAM;
-        hints.ai_flags = AI_PASSIVE;
-
-		btd_log(2, "Address without port: %s\n", value);
-		if (portindex == -1){
-			btd_log(2, "no port found so treating it "
-				"as a unix socket\n");
-			create_unixsocket(config, value);
-		} else {
-			if((s = getaddrinfo(value, value+portindex,
-					&hints, &result)) != 0) {
-				btd_log(2, "getaddrinfo returned %s, "
-					"treating it as an unix socket\n",
-					gai_strerror(s));
-				value[portindex-1] = ':';
-				create_unixsocket(config, value);
-			} else {
-				btd_log(2, "Succesfully parsed ipv4 "
-					"or ipv6 addresses\n");
-				config->socket = result;
-			}
-		}
+		config->socket = btd_get_addrinfo(value);
 	} else if (strcmp(key, "datadir") == 0){
 		free(config->datadir);
 		config->datadir = resolve_tilde(value);
@@ -210,7 +136,7 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 
 	config->datadir = get_data_path();
 	key = safe_strcat(2, config->datadir, "/btd.socket");
-	create_unixsocket(config, key);
+	config->socket = btd_get_addrinfo(key);
 	free(key);
 
 	btd_log(2, "Opening config at '%s'\n", config->configpath);

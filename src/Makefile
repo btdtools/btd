@@ -1,7 +1,7 @@
 SHELL:=/bin/bash
 PROGRAM:=btd
 HEADERS:=doc.h
-OBJS:=$(addsuffix .o,$(basename $(wildcard *.c)))
+OBJS:=$(addsuffix .o,$(basename $(wildcard *.c))) ../libbtd/libbtd.so
 
 CFLAGS=-g -Wextra -Wall -Werror -pedantic -std=gnu11
 LDLIBS=-lsqlite3 -luuid
@@ -13,8 +13,12 @@ doc.h: ../PROTOCOL.txt
 	sed -e 's/$$/\\n"\\/g' -e 's/^/\t"/g' $< >> $@
 	echo -e ";\n#endif" >> $@
 
+../libbtd/libbtd.so:
+	make -C ../libbtd
+
 $(PROGRAM): $(HEADERS) $(OBJS)
-	$(LINK.c)$(LDLIBS) $^ $(OUTPUT_OPTION)
+	$(LINK.c) $(LDLIBS) $^ $(OUTPUT_OPTION)
 
 clean:
 	$(RM) $(PROGRAM) $(OBJS) $(HEADERS)
+	make -C ../libbtd clean
