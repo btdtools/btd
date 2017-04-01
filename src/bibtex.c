@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "bibtex.h"
-#include "misc.h"
+#include "libbtd.h"
 
 #define BUFSIZE 4048
 

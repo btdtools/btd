@@ -9,9 +9,10 @@
 #include <uuid/uuid.h>
 
 #include "config.h"
-#include "log.h"
-#include "misc.h"
+#include "libbtd.h"
 #include "bibtex.h"
+
+#define VERSION "0.1"
 
 char *sqlite_create_cfg_table =
 	"CREATE TABLE IF NOT EXISTS config"

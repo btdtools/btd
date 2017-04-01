@@ -11,8 +11,7 @@
 
 #include "config.h"
 #include "parse.h"
-#include "misc.h"
-#include "log.h"
+#include "libbtd.h"
 #include "db.h"
 #include "bibtex.h"
 #include "doc.h"

@@ -3,8 +3,7 @@
 #include <ctype.h>
 
 #include "parse.h"
-#include "misc.h"
-#include "log.h"
+#include "libbtd.h"
 
 char *ltrim(char *s)
 {

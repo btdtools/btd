@@ -11,10 +11,7 @@
 #include <unistd.h>
 
 #include "config.h"
-#include "log.h"
-#include "misc.h"
 #include "parse.h"
-#include "xdg.h"
 #include "libbtd.h"
 
 const char *argp_program_version = "btd 0.1";
@@ -61,13 +58,6 @@ static struct argp argp = {
 	.help_filter=NULL,
 	.argp_domain=NULL};
 
-static void free_config_socket(struct btd_config *config)
-{
-	if (config->socket->ai_family == AF_UNIX)
-		free(config->socket->ai_addr);
-	freeaddrinfo(config->socket);
-}
-
 bool parse_boolean(char *value, char *name)
 {
 	if(strcmp(value, "true") != 0 && strcmp(value, "false") != 0)
@@ -94,7 +84,7 @@ void update_config(struct btd_config *config, char *key, char *value){
 
 	/* Configuration options */
 	if (strcmp(key, "socket") == 0){
-		free_config_socket(config);
+		btd_free_addrinfo(config->socket);
 		config->socket = btd_get_addrinfo(value);
 	} else if (strcmp(key, "datadir") == 0){
 		free(config->datadir);
@@ -132,11 +122,13 @@ void btd_config_populate(struct btd_config *config, int argc, char **argv)
 		get_btd_log_level());
 
 	if (config->configpath == NULL)
-		config->configpath = get_config_path();
+		config->configpath = btd_get_config_path();
 
-	config->datadir = get_data_path();
+	config->datadir = btd_get_data_path();
 	key = safe_strcat(2, config->datadir, "/btd.socket");
+	printf("config.socket: %p\n", (void *)config->socket);
 	config->socket = btd_get_addrinfo(key);
+	printf("config.socket: %p\n", (void *)config->socket);
 	free(key);
 
 	btd_log(2, "Opening config at '%s'\n", config->configpath);
@@ -193,7 +185,7 @@ void btd_config_print(struct btd_config *config, FILE *fp)
 
 void btd_config_free(struct btd_config *config)
 {
-	free_config_socket(config);
+	btd_free_addrinfo(config->socket);
 	free(config->configpath);
 	free(config->datadir);
 	free(config->db);
